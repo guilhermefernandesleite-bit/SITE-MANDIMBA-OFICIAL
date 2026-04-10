@@ -455,6 +455,10 @@ footer {
     </div>
   </div>
 
+  <div style="display:flex;align-items:center;gap:10px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);padding:10px 20px;">
+    <span style="font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:rgba(201,168,76,0.6);">Saldo</span>
+    <span id="saldo-creditos" style="font-family:'Cormorant Infant',serif;font-weight:600;font-size:22px;color:#C9A84C;">M$—</span>
+  </div>
 </div>
 
 <!-- MAIN -->
@@ -658,7 +662,7 @@ footer {
         <span class="slip-total-label">Odd combinada</span>
         <span class="slip-total-odd" id="slip-total-odd">1.0×</span>
       </div>
-      <input class="slip-name-input" id="slip-name" type="text" placeholder="Seu nome ou apelido…" maxlength="32">
+      <div style="padding:12px 16px;background:var(--surface);border:1px solid var(--border);font-size:15px;color:var(--text-dim);font-style:italic;margin-bottom:12px;" id="slip-nome-display">Carregando...</div>
       <button class="btn-confirmar" id="btn-confirmar" onclick="confirmarAposta()">Confirmar Palpite</button>
       <button class="btn-limpar" onclick="limparTudo()">Limpar tudo</button>
     </div>
@@ -710,6 +714,32 @@ footer {
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── SUPABASE AUTH ──
+const _sb = supabase.createClient(
+  'https://psohvzcwxxiplstngzty.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2h2emN3eHhpcGxzdG5nenR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTE1NjMsImV4cCI6MjA5MTMyNzU2M30.5uYQWrFeVA1ffuTt6SNKVnPS-NoVkIVplB4ymw0VVOQ'
+);
+let _profile = null;
+
+async function initAuth() {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html?next=apostas.html';
+    return false;
+  }
+  const { data } = await _sb.from('profiles').select('*').eq('id', session.user.id).single();
+  _profile = data;
+  renderSaldo();
+  return true;
+}
+
+function renderSaldo() {
+  const el = document.getElementById('saldo-creditos');
+  if (el && _profile) el.textContent = 'M$' + (_profile.creditos || 0);
+}
+</script>
 <script>
 
 
@@ -804,23 +834,50 @@ function limparTudo() {
 }
 
 // ── CONFIRMAR ──
-function confirmarAposta() {
-  const nome = document.getElementById("slip-name").value.trim();
-  if (!nome) { document.getElementById("slip-name").focus(); return; }
+async function confirmarAposta() {
+  if (!_profile) { window.location.href = 'login.html?next=apostas.html'; return; }
 
   const all = Object.values(bets).flat();
   const totalOdd = all.reduce((acc, b) => acc * b.odd, 1);
+  const creditos_apostados = 10;
 
-  // salva no ranking (localStorage)
+  if (_profile.creditos < creditos_apostados) {
+    alert('Saldo insuficiente! Você tem M$' + _profile.creditos + ' e a aposta custa M$10.');
+    return;
+  }
+
+  // Desconta créditos
+  const novoSaldo = _profile.creditos - creditos_apostados;
+  await _sb.from('profiles').update({ creditos: novoSaldo }).eq('id', _profile.id);
+  _profile.creditos = novoSaldo;
+  renderSaldo();
+
+  // Salva cada mercado como uma aposta
+  const jogo = document.getElementById('mb-away')?.textContent || 'Próximo jogo';
+  for (const b of all) {
+    await _sb.from('apostas').insert({
+      user_id: _profile.id,
+      jogo_descricao: 'Mandimba FC vs ' + jogo,
+      mercado: b.sel.includes('marca') ? 'Marca Gol' :
+               b.sel.includes('vence') || b.sel === 'Empate' ? 'Resultado' :
+               'Primeiro Gol',
+      selecao: b.sel,
+      creditos_apostados: creditos_apostados,
+      status: 'pendente'
+    });
+  }
+
+  // Salva no ranking local também
   const ranking = JSON.parse(localStorage.getItem("mandimba_ranking") || "[]");
   ranking.push({
-    nome, apostas: all.map(b => b.sel),
+    nome: _profile.apelido || _profile.nome,
+    apostas: all.map(b => b.sel),
     odd: totalOdd.toFixed(1), ts: Date.now(), acertos: 0
   });
   localStorage.setItem("mandimba_ranking", JSON.stringify(ranking));
 
   document.getElementById("modal-msg").textContent =
-    `Palpite de ${nome} registrado! Odd combinada: ${totalOdd.toFixed(1)}×. Boa sorte no sábado!`;
+    `Palpite de ${_profile.apelido || _profile.nome} registrado! Odd: ${totalOdd.toFixed(1)}× · Saldo: M$${novoSaldo}`;
 
   document.getElementById("modal").classList.add("open");
   limparTudo();
@@ -919,6 +976,9 @@ async function init() {
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
     renderPlayers(jogadores);
+    // Atualiza nome no slip
+    const nd = document.getElementById('slip-nome-display');
+    if(nd && _profile) nd.textContent = _profile.apelido || _profile.nome;
     renderRanking();
     renderHistorico();
     renderMyStats();
@@ -1140,7 +1200,7 @@ function showToast(msg) {
   setTimeout(()=>t.classList.remove('show'),3200);
 }
 
-init();
+initAuth().then(ok => { if(ok) init(); });
 </script>
 </body>
 </html>

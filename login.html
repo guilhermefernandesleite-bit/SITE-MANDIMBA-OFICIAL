@@ -93,7 +93,7 @@ body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;m
 const sb = supabase.createClient('https://psohvzcwxxiplstngzty.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2h2emN3eHhpcGxzdG5nenR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTE1NjMsImV4cCI6MjA5MTMyNzU2M30.5uYQWrFeVA1ffuTt6SNKVnPS-NoVkIVplB4ymw0VVOQ');
 
 sb.auth.getSession().then(({data:{session}})=>{
-  if(session) window.location.href='index.html';
+  if(session){ const n=new URLSearchParams(window.location.search).get('next')||'index.html'; window.location.href=n; }
 });
 
 function sw(t,b){
@@ -124,7 +124,8 @@ async function doLogin(e){
     return;
   }
   sm('msg-login','success','Login realizado! Redirecionando...');
-  setTimeout(()=>window.location.href='index.html',1000);
+  const next = new URLSearchParams(window.location.search).get('next') || 'index.html';
+  setTimeout(()=>window.location.href=next,1000);
 }
 
 async function doCadastro(e){
@@ -161,7 +162,8 @@ async function doCadastro(e){
   await sb.from('convites').update({usado:true,usado_por:au.user.id}).eq('codigo',convite);
 
   sm('msg-cadastro','success','Conta criada! Voce recebeu 100 creditos. Redirecionando...');
-  setTimeout(()=>window.location.href='index.html',1500);
+  const next2 = new URLSearchParams(window.location.search).get('next') || 'index.html';
+  setTimeout(()=>window.location.href=next2,1500);
 }
 </script>
 </body>
