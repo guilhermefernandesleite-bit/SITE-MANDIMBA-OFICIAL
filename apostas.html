@@ -672,7 +672,7 @@ footer {
     <!-- TOTAL DE GOLS -->
     <div class="bet-section">
       <h2 class="bet-section-title">Total de <em>gols</em></h2>
-      <p class="bet-section-desc">Mandimba marca em média 5.8 gols por jogo. Quanto será hoje?</p>
+      <p class="bet-section-desc">Média de <span id="media-gols-desc">—</span> gols por jogo (ambos os times). Quanto será hoje?</p>
       <div class="gols-grid">
         <div class="gol-card" data-cat="total_gols" data-sel="Menos de 4 gols" data-odd="5.0" onclick="toggleBet(this)">
           <span class="gol-range">Menos de 4</span>
@@ -1080,6 +1080,17 @@ async function init() {
         setTimeout(travarApostas, msRestantes - 60000);
       }
     }
+  }
+
+  // Calcula média de gols totais por jogo
+  const jogosComResultado = jogos.filter(j => j['placar mandimba'] && j['placar visitante']);
+  if (jogosComResultado.length > 0) {
+    const totalGols = jogosComResultado.reduce((acc, j) => {
+      return acc + parseInt(j['placar mandimba']||0) + parseInt(j['placar visitante']||0);
+    }, 0);
+    const media = (totalGols / jogosComResultado.length).toFixed(1);
+    const elMedia = document.getElementById('media-gols-desc');
+    if (elMedia) elMedia.textContent = media;
   }
 
   renderNextMatch(proximo);
