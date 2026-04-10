@@ -520,117 +520,118 @@ footer {
 
 
 
-<script src="sheets.js"></script>
+
+
+
 <script>
-(async function() {
-  // ── PRÓXIMA PARTIDA ─────────────────────────────
-  async function renderProximoJogo() {
-    const jogo = await MandimbaDB.proximoJogo();
-    if (jogo) {
-      const adv = jogo['adversario'] || jogo['adversário'] || 'A definir';
-      const data = jogo['data'] || '—';
-      const hora = jogo['hora'] || jogo['horario'] || jogo['horário'] || '—';
-      const local = jogo['local'] || jogo['campeonato'] || '—';
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
+const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=627501198&single=true&output=csv';
 
-      document.getElementById('opp-name').textContent = adv;
-      document.getElementById('opp-badge').textContent = adv.slice(0,3).toUpperCase();
-      document.getElementById('m-date').textContent = data;
-      document.getElementById('m-time').textContent = hora;
-      document.getElementById('m-local').textContent = local;
-
-      // Countdown
-      const dtStr = data + (hora !== '—' ? 'T' + hora.replace('h',':').replace(/:(\d)$/,':0$1') + ':00' : '');
-      const dt = new Date(dtStr);
-      if (!isNaN(dt)) {
-        function tick() {
-          const diff = dt - new Date();
-          if (diff <= 0) return;
-          const pad = n => String(Math.floor(n)).padStart(2,'0');
-          document.getElementById('cd-d').textContent = pad(diff/86400000);
-          document.getElementById('cd-h').textContent = pad((diff%86400000)/3600000);
-          document.getElementById('cd-m').textContent = pad((diff%3600000)/60000);
-          document.getElementById('cd-s').textContent = pad((diff%60000)/1000);
-        }
-        tick(); setInterval(tick, 1000);
-      }
+function parseCSV(text) {
+  return text.trim().split('\n').map(row => {
+    const cols = []; let cur = '', inQ = false;
+    for (let c of row) {
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
     }
-  }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
 
-  // ── ÚLTIMOS JOGOS ────────────────────────────────
-  async function renderUltimosJogos() {
-    const jogos = await MandimbaDB.ultimosJogos(5);
+function toObjects(rows, headerIdx) {
+  const headers = rows[headerIdx].map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
+  return rows.slice(headerIdx + 1)
+    .filter(r => r[0] && r[0] !== 'TOTAL' && r.some(c => c !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = r[i] || '');
+      return obj;
+    });
+}
+
+async function init() {
+  try {
+    // JOGOS
+    const rJogos = await fetch(CSV_JOGOS);
+    const textJogos = await rJogos.text();
+    const rowsJogos = parseCSV(textJogos);
+    const jogos = toObjects(rowsJogos, 4);
+
+    // Próximo jogo (sem resultado ou sem placar)
+    const proximo = jogos.find(j => !j['resultado'] || !j['placar mandimba']);
+    if (proximo) {
+      document.getElementById('opp-name').textContent = proximo['adversario'] || 'A definir';
+      document.getElementById('opp-badge').textContent = (proximo['adversario'] || 'A').slice(0,3).toUpperCase();
+      document.getElementById('m-date').textContent = proximo['data'] || '—';
+      document.getElementById('m-time').textContent = '—';
+      document.getElementById('m-local').textContent = proximo['campeonato'] || '—';
+    }
+
+    // Últimos 5 jogos com resultado
+    const comResultado = jogos.filter(j => j['resultado'] && j['resultado'] !== '').reverse().slice(0, 5);
     const container = document.getElementById('results');
-    if (!jogos.length) return;
-    container.innerHTML = '';
+    if (comResultado.length) {
+      container.innerHTML = '';
+      comResultado.forEach(j => {
+        const res = j['resultado'].toLowerCase();
+        const pm  = j['placar mandimba'] || '0';
+        const pv  = j['placar visitante'] || '0';
+        const adv = j['adversario'] || '—';
+        const data = j['data'] || '—';
+        const camp = j['campeonato'] || '';
+        let cls = 'draw', label = 'Empate';
+        if (res.includes('vit')) { cls = 'win';  label = 'Vitória'; }
+        if (res.includes('der')) { cls = 'loss'; label = 'Derrota'; }
+        container.innerHTML += `
+          <div class="result-row">
+            <div class="r-date-comp">
+              <span class="r-date">${data}</span>
+              <span class="r-comp">${camp}</span>
+            </div>
+            <span class="r-team">Mandimba</span>
+            <span class="r-score ${cls}">${pm} — ${pv}</span>
+            <span class="r-team away">${adv}</span>
+            <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
+          </div>`;
+      });
+    }
 
-    jogos.forEach(j => {
-      const res   = (j['resultado'] || '').toLowerCase();
-      const pm    = j['placar mandimba']   || j['placar_mandimba']   || '0';
-      const pv    = j['placar visitante']  || j['placar_visitante']  || '0';
-      const adv   = j['adversario'] || j['adversário'] || j['adversÃ¡rio'] || '—';
-      const data  = j['data']              || '—';
-      const camp  = j['campeonato']        || '';
-
-      let cls = 'draw', label = 'Empate';
-      if (res.includes('vit')) { cls = 'win';  label = 'Vitória'; }
-      if (res.includes('der')) { cls = 'loss'; label = 'Derrota'; }
-
-      container.innerHTML += `
-        <div class="result-row">
-          <div class="r-date-comp">
-            <span class="r-date">${data}</span>
-            <span class="r-comp">${camp}</span>
-          </div>
-          <span class="r-team">Mandimba</span>
-          <span class="r-score ${cls}">${pm} — ${pv}</span>
-          <span class="r-team away">${adv}</span>
-          <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
-        </div>`;
-    });
-  }
-
-  // ── CLASSIFICAÇÃO ────────────────────────────────
-  async function renderClassificacao() {
-    const cls = await MandimbaDB.classificacao();
+    // CLASSIFICAÇÃO
+    const rClass = await fetch(CSV_CLASS);
+    const textClass = await rClass.text();
+    const rowsClass = parseCSV(textClass);
+    const classif = toObjects(rowsClass, 1);
     const tbody = document.querySelector('table.st tbody');
-    if (!cls.length || !tbody) return;
-    tbody.innerHTML = '';
-
-    cls.forEach((r, i) => {
-      const time    = r['time']             || '—';
-      const pts     = r['pontos']           || '0';
-      const jogos   = r['jogos']            || '0';
-      const vit     = r['vitorias']         || r['vitórias']       || '0';
-      const emp     = r['empates']          || '0';
-      const der     = r['derrotas']         || '0';
-      const gp      = r['gols pro']         || r['gols pró']       || r['gols_pro'] || '0';
-      const gc      = r['gols contra']      || '0';
-      const sg      = r['saldo de gols']    || r['saldo_de_gols']  || '0';
-      const isMe    = time.toLowerCase().includes('mandimba');
-
-      // Forma (últimas 5: calculada dos jogos se disponível, senão pontos)
-      const pips = "";
-
-      tbody.innerHTML += `
-        <tr class="${isMe ? 'me' : ''}">
-          <td>${i+1}</td>
-          <td>${time}</td>
-          <td>${jogos}</td><td>${vit}</td><td>${emp}</td><td>${der}</td>
-          <td>${gp}</td><td>${gc}</td><td>${sg}</td>
-          
-          <td>${pts}</td>
-        </tr>`;
-    });
+    if (tbody && classif.length) {
+      tbody.innerHTML = '';
+      classif.forEach((r, i) => {
+        const time  = r['time'] || '—';
+        const pts   = r['pontos'] || '0';
+        const j2    = r['jogos'] || '0';
+        const v     = r['vitorias'] || '0';
+        const e     = r['empates'] || '0';
+        const d     = r['derrotas'] || '0';
+        const gp    = r['gols pro'] || r['gols pro'] || '0';
+        const gc    = r['gols contra'] || '0';
+        const sg    = r['saldo de gols'] || '0';
+        const isMe  = time.toLowerCase().includes('mandimba');
+        tbody.innerHTML += `
+          <tr class="${isMe ? 'me' : ''}">
+            <td>${i+1}</td><td>${time}</td>
+            <td>${j2}</td><td>${v}</td><td>${e}</td><td>${d}</td>
+            <td>${gp}</td><td>${gc}</td><td>${sg}</td>
+            <td>${pts}</td>
+          </tr>`;
+      });
+    }
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e);
   }
+}
 
-  // Roda tudo em paralelo
-  await Promise.all([
-    renderProximoJogo(),
-    renderUltimosJogos(),
-    renderClassificacao(),
-  ]);
-})();
+init();
 </script>
-
 </body>
 </html>
