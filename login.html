@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Entrar - Mandimba FC</title>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+Infant:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Cormorant+Infant:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--crimson:#9B1515;--cl:#C01C1C;--black:#080808;--ink:#0E0E0E;--surface:#141414;--border:rgba(255,255,255,0.07);--border-red:rgba(155,21,21,0.35);--text:#E8E4DC;--dim:rgba(232,228,220,0.45);}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;min-height:100vh;display:grid;grid-template-columns:1fr 1fr;-webkit-font-smoothing:antialiased;}
 .left{background:var(--ink);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;padding:56px;position:relative;overflow:hidden;}
-.wm{position:absolute;bottom:-40px;left:-20px;font-family:'Cormorant Infant',serif;font-weight:700;font-size:220px;color:rgba(155,21,21,0.05);line-height:1;pointer-events:none;user-select:none;}
+.wm{position:absolute;bottom:-40px;left:-20px;font-family:'Cormorant Infant',serif;font-weight:700;font-size:220px;color:rgba(155,21,21,0.05);line-height:1;pointer-events:none;}
 .logo{display:flex;align-items:center;gap:14px;text-decoration:none;}
 .logo img{height:40px;width:40px;object-fit:contain;}
 .logo-t{font-family:'Cormorant Infant',serif;font-weight:600;font-size:17px;letter-spacing:0.22em;text-transform:uppercase;color:var(--text);}
@@ -57,12 +58,12 @@ body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;m
   <div class="lc">
     <div class="ey"><span class="eyl"></span><span class="eyt">Fundado em 2019</span></div>
     <h1 class="ltitle">Bem-vindo<br>ao <em>clube</em></h1>
-    <p class="ldesc">Acesse sua conta para ver estatísticas, disputar o Fantasy e acompanhar o clube.</p>
+    <p class="ldesc">Acesse sua conta para ver estatisticas, disputar o Fantasy e acompanhar o clube.</p>
   </div>
   <div class="stats">
     <div class="stat"><span class="n" id="sj">-</span><span class="l">Jogos</span></div>
     <div class="stat"><span class="n" id="sg">-</span><span class="l">Gols</span></div>
-    <div class="stat"><span class="n" id="sv">-</span><span class="l">Vitórias</span></div>
+    <div class="stat"><span class="n" id="sv">-</span><span class="l">Vitorias</span></div>
   </div>
   <span class="wm" aria-hidden="true">MFC</span>
 </div>
@@ -79,59 +80,86 @@ body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;m
   </form>
   <form class="form" id="form-cadastro" onsubmit="doCadastro(event)">
     <div id="msg-cadastro"></div>
-    <div class="fg"><label class="fl">Código de convite</label><input type="text" class="fi cu" id="cc" placeholder="MANDIMBA-00" required maxlength="12"><span class="fh">Peça ao administrador do clube</span></div>
+    <div class="fg"><label class="fl">Codigo de convite</label><input type="text" class="fi cu" id="cc" placeholder="MANDIMBA-00" required maxlength="12"><span class="fh">Peca ao administrador do clube</span></div>
     <div class="fg"><label class="fl">Nome completo</label><input type="text" class="fi" id="cn" placeholder="Seu nome" required></div>
     <div class="fg"><label class="fl">Apelido</label><input type="text" class="fi" id="ca" placeholder="Ex: Arroz, Gamino..."></div>
     <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="ce" placeholder="seu@email.com" required></div>
-    <div class="fg"><label class="fl">Senha</label><input type="password" class="fi" id="cs" placeholder="Mínimo 6 caracteres" required minlength="6"></div>
+    <div class="fg"><label class="fl">Senha</label><input type="password" class="fi" id="cs" placeholder="Minimo 6 caracteres" required minlength="6"></div>
     <button type="submit" class="btn" id="bc">Criar conta</button>
   </form>
-  <div class="foot">Mandimba FC · Est. 2019 · Acesso exclusivo para membros</div>
+  <div class="foot">Mandimba FC - Est. 2019 - Acesso exclusivo para membros</div>
 </div>
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-const sb = createClient('https://psohvzcwxxiplstngzty.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2h2emN3eHhpcGxzdG5nenR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTE1NjMsImV4cCI6MjA5MTMyNzU2M30.5uYQWrFeVA1ffuTt6SNKVnPS-NoVkIVplB4ymw0VVOQ');
-window._sb = sb;
-const {data:{session}} = await sb.auth.getSession();
-if(session) window.location.href='index.html';
-try{
-  const r=await fetch('https://docs.google.com/spreadsheets/d/1Wv6vyuujDWY3mUIsC04leLcF2aygdwZeZ-uAu0v02jI/export?format=csv&gid=0');
-  if(r.ok){
-    const rows=(await r.text()).trim().split('
-').slice(1).filter(x=>x.includes('Vit')||x.includes('Der')||x.includes('Emp'));
-    document.getElementById('sj').textContent=rows.length||'-';
-    document.getElementById('sv').textContent=rows.filter(x=>x.includes('Vit')).length||'-';
-    let g=0;rows.forEach(x=>{const c=x.split(',');if(c[4])g+=parseInt(c[4])||0;});
-    document.getElementById('sg').textContent=g||'-';
-  }
-}catch(e){}
-</script>
 <script>
-function sw(t,b){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.form').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('form-'+t).classList.add('active');}
-function sm(id,t,txt){const e=document.getElementById(id);e.className='msg '+t;e.textContent=txt;}
+const sb = supabase.createClient('https://psohvzcwxxiplstngzty.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2h2emN3eHhpcGxzdG5nenR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTE1NjMsImV4cCI6MjA5MTMyNzU2M30.5uYQWrFeVA1ffuTt6SNKVnPS-NoVkIVplB4ymw0VVOQ');
+
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session) window.location.href='index.html';
+});
+
+function sw(t,b){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.form').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('form-'+t).classList.add('active');
+}
+
+function sm(id,tipo,txt){
+  const e=document.getElementById(id);
+  e.className='msg '+tipo;
+  e.textContent=txt;
+}
+
 async function doLogin(e){
-  e.preventDefault();const b=document.getElementById('bl');
-  b.disabled=true;b.innerHTML='<span class="sp"></span>Entrando...';
-  const{error}=await window._sb.auth.signInWithPassword({email:document.getElementById('le').value,password:document.getElementById('ls').value});
-  if(error){sm('msg-login','error','E-mail ou senha incorretos.');b.disabled=false;b.textContent='Entrar';return;}
+  e.preventDefault();
+  const b=document.getElementById('bl');
+  b.disabled=true;
+  b.innerHTML='<span class="sp"></span>Entrando...';
+  const{error}=await sb.auth.signInWithPassword({
+    email:document.getElementById('le').value,
+    password:document.getElementById('ls').value
+  });
+  if(error){
+    sm('msg-login','error','E-mail ou senha incorretos.');
+    b.disabled=false;b.textContent='Entrar';
+    return;
+  }
   sm('msg-login','success','Login realizado! Redirecionando...');
   setTimeout(()=>window.location.href='index.html',1000);
 }
+
 async function doCadastro(e){
-  e.preventDefault();const b=document.getElementById('bc');
+  e.preventDefault();
+  const b=document.getElementById('bc');
   const convite=document.getElementById('cc').value.toUpperCase().trim();
   const nome=document.getElementById('cn').value.trim();
   const apelido=document.getElementById('ca').value.trim();
   const email=document.getElementById('ce').value.trim();
   const senha=document.getElementById('cs').value;
-  b.disabled=true;b.innerHTML='<span class="sp"></span>Verificando convite...';
-  const{data:cv,error:ce2}=await window._sb.from('convites').select('*').eq('codigo',convite).eq('usado',false).single();
-  if(ce2||!cv){sm('msg-cadastro','error','Codigo invalido ou ja utilizado.');b.disabled=false;b.textContent='Criar conta';return;}
+
+  b.disabled=true;
+  b.innerHTML='<span class="sp"></span>Verificando convite...';
+
+  const{data:cv,error:ce2}=await sb.from('convites').select('*').eq('codigo',convite).eq('usado',false).single();
+
+  if(ce2||!cv){
+    sm('msg-cadastro','error','Codigo invalido ou ja utilizado.');
+    b.disabled=false;b.textContent='Criar conta';
+    return;
+  }
+
   b.innerHTML='<span class="sp"></span>Criando conta...';
-  const{data:au,error:ae}=await window._sb.auth.signUp({email,password:senha});
-  if(ae){sm('msg-cadastro','error',ae.message);b.disabled=false;b.textContent='Criar conta';return;}
-  await window._sb.from('profiles').insert({id:au.user.id,nome,apelido:apelido||nome,creditos:100});
-  await window._sb.from('convites').update({usado:true,usado_por:au.user.id}).eq('codigo',convite);
+
+  const{data:au,error:ae}=await sb.auth.signUp({email,password:senha});
+
+  if(ae){
+    sm('msg-cadastro','error',ae.message);
+    b.disabled=false;b.textContent='Criar conta';
+    return;
+  }
+
+  await sb.from('profiles').insert({id:au.user.id,nome,apelido:apelido||nome,creditos:100});
+  await sb.from('convites').update({usado:true,usado_por:au.user.id}).eq('codigo',convite);
+
   sm('msg-cadastro','success','Conta criada! Voce recebeu 100 creditos. Redirecionando...');
   setTimeout(()=>window.location.href='index.html',1500);
 }
