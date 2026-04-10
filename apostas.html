@@ -914,7 +914,14 @@ async function init() {
     const rP = await fetch(CSV_JOGS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
     const jogadores = toObjects(parseCSV(await rP.text()), 4);
 
-    renderNextMatch(proximo);
+    // Corrige extração do horário da data
+  if (proximo) {
+    const dataStr = (proximo['data'] || '').trim();
+    const partesDT = dataStr.split(' ');
+    proximo['_data_formatada'] = partesDT[0] || '—';
+    proximo['_hora_formatada'] = partesDT[1] ? partesDT[1] + 'h' : '—';
+  }
+  renderNextMatch(proximo);
     renderPlayers(jogadores);
     renderRanking();
     renderHistorico();
@@ -931,12 +938,13 @@ async function init() {
 
 function renderNextMatch(jogo) {
   const adv   = jogo ? (jogo['adversario'] || 'A definir') : 'A definir';
-  const data  = jogo ? (jogo['data'] || '—') : '—';
+  const data  = jogo ? (jogo['_data_formatada'] || jogo['data'] || '—') : '—';
+  const hora  = jogo ? (jogo['_hora_formatada'] || '—') : '—';
   const local = jogo ? (jogo['campeonato'] || '—') : '—';
   const el = id => document.getElementById(id);
   if(el('rodada-num'))   el('rodada-num').textContent  = '—';
   if(el('match-local'))  el('match-local').textContent = local;
-  if(el('match-date'))   el('match-date').textContent  = data;
+  if(el('match-date'))   el('match-date').textContent  = data + (hora !== '—' ? ' · ' + hora : '');
   if(el('team-home'))    el('team-home').textContent   = 'Mandimba FC';
   if(el('team-away'))    el('team-away').textContent   = adv;
   if(el('opt-home-name')) el('opt-home-name').textContent = 'Mandimba FC';
