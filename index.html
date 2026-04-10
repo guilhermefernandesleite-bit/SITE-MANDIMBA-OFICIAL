@@ -614,11 +614,41 @@ async function init() {
     });
 
     if (proximo) {
+      const dataStr = (proximo['data'] || '').trim();
+      const partesDT = dataStr.split(' ');
+      const dataFormatada = partesDT[0] || '—';
+      const horaFormatada = partesDT[1] ? partesDT[1] + 'h' : '—';
+
       document.getElementById('opp-name').textContent = proximo['adversario'] || 'A definir';
       document.getElementById('opp-badge').textContent = (proximo['adversario'] || 'A').slice(0,3).toUpperCase();
-      document.getElementById('m-date').textContent = proximo['data'] || '—';
-      document.getElementById('m-time').textContent = '—';
+      document.getElementById('m-date').textContent = dataFormatada;
+      document.getElementById('m-time').textContent = horaFormatada;
       document.getElementById('m-local').textContent = proximo['campeonato'] || '—';
+
+      // Countdown
+      const d = parseData(dataStr);
+      if (d && partesDT[1]) {
+        const hm = partesDT[1].split(':');
+        d.setHours(parseInt(hm[0]), parseInt(hm[1]), 0, 0);
+        function tick() {
+          const diff = d - new Date();
+          if (diff <= 0) {
+            ['cd-d','cd-h','cd-m','cd-s'].forEach(id => {
+              const el = document.getElementById(id);
+              if(el) el.textContent = '00';
+            });
+            return;
+          }
+          const pad = n => String(Math.floor(n)).padStart(2,'0');
+          const el = id => document.getElementById(id);
+          if(el('cd-d')) el('cd-d').textContent = pad(diff/86400000);
+          if(el('cd-h')) el('cd-h').textContent = pad((diff%86400000)/3600000);
+          if(el('cd-m')) el('cd-m').textContent = pad((diff%3600000)/60000);
+          if(el('cd-s')) el('cd-s').textContent = pad((diff%60000)/1000);
+        }
+        tick();
+        setInterval(tick, 1000);
+      }
     }
 
     // Últimos 5 jogos = com resultado E data < hoje
