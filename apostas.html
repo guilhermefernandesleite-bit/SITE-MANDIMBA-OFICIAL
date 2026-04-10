@@ -393,58 +393,17 @@ footer {
   .f-right{justify-content:center;}
 }
 
-/* ── MENU HAMBURGUER MOBILE ── */
-.nav-hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  padding: 8px;
-  background: none;
-  border: none;
-  position: relative;
-  z-index: 300;
-}
-.nav-hamburger span {
-  display: block;
-  width: 22px;
-  height: 1.5px;
-  background: var(--text);
-  transition: all .3s;
-}
-.nav-mobile {
-  display: none;
-  position: fixed;
-  top: 64px;
-  left: 0;
-  right: 0;
-  background: rgba(8,8,8,0.98);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid var(--border);
-  z-index: 199;
-  padding: 24px 24px;
-  flex-direction: column;
-  gap: 0;
-}
-.nav-mobile.open { display: flex; }
-.nav-mobile a {
-  font-family: 'EB Garamond', serif;
-  font-size: 14px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  text-decoration: none;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
-  transition: color .25s;
-}
-.nav-mobile a:last-child { border-bottom: none; }
-.nav-mobile a:hover, .nav-mobile a.active { color: var(--text); }
 
-@media(max-width:960px){
-  .nav-hamburger { display: flex; }
-}
 
+
+/* HAMBURGUER */
+.hbg { display:none; flex-direction:column; gap:5px; cursor:pointer; padding:8px; background:none; border:none; z-index:9999; position:relative; }
+.hbg span { display:block; width:22px; height:2px; background:var(--text); transition:all .3s; pointer-events:none; }
+.mob-menu { display:none; position:fixed; top:64px; left:0; right:0; bottom:0; background:rgba(8,8,8,0.98); z-index:9998; padding:32px 28px; flex-direction:column; gap:0; overflow-y:auto; }
+.mob-menu.open { display:flex; }
+.mob-menu a { font-family:'EB Garamond',serif; font-size:18px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-dim); text-decoration:none; padding:18px 0; border-bottom:1px solid var(--border); }
+.mob-menu a.active, .mob-menu a:hover { color:var(--text); }
+@media(max-width:960px){ .hbg{display:flex;} }
 </style>
 </head>
 <body>
@@ -471,11 +430,17 @@ footer {
     </svg>
     @mandimbafc
   </a>
-  <!-- MENU MOBILE -->
-  <button class="nav-hamburger" onclick="toggleMenu()" id="nav-hamburger" aria-label="Menu">
-    <span></span><span></span><span></span>
-  </button>
+    <button class="hbg" id="hbg" onclick="toggleHbg()"><span></span><span></span><span></span></button>
 </nav>
+
+<div class="mob-menu" id="mob-menu">
+<a href="index.html">Início</a>
+    <a href="classificacao.html">Classificação</a>
+    <a href="estatisticas.html">Estatísticas</a>
+    <a href="apostas.html" class="active">Fantasy</a>
+    <a href="loja.html">Loja</a>
+    <a href="perfil.html">Perfil</a>
+</div>
 
 <!-- HERO -->
 <div class="page-hero">
@@ -1402,6 +1367,12 @@ function showToast(msg) {
 }
 
 initAuth().then(ok => { if(ok) init(); });
+</script>
+
+<script>
+function toggleHbg() {
+  document.getElementById('mob-menu').classList.toggle('open');
+}
 </script>
 </body>
 </html>
