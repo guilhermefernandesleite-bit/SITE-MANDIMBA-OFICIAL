@@ -380,16 +380,49 @@ footer {
 
 @media(max-width:960px){
   nav{padding:0 20px;} .nav-links{display:none;}
-  .page-hero{padding:100px 24px 48px;}
-  .match-banner{flex-direction:column;padding:24px;gap:20px;align-items:flex-start;}
+
+  /* Hero */
+  .page-hero{padding:88px 20px 36px;}
+  .page-title{font-size:clamp(44px,12vw,64px); margin-bottom:16px;}
+  .page-sub{font-size:14px;}
+
+  /* Match banner */
+  .match-banner{flex-direction:column;padding:20px;gap:16px;align-items:flex-start;}
+  .match-teams-row{gap:16px;}
+  .mb-team{font-size:17px;}
+  .match-details{flex-wrap:wrap;gap:16px;}
+  .md-val{font-size:14px;}
+
+  /* Layout apostas */
   .apostas-main{grid-template-columns:1fr;}
-  .apostas-col{padding:40px 24px;}
-  .slip-col{position:static;height:auto;padding:40px 24px;}
+  .apostas-col{padding:32px 20px;}
+
+  /* Cards */
   .player-grid{grid-template-columns:1fr;}
+  .player-card{padding:14px 16px;}
+  .player-name{font-size:15px;}
+  .player-odd{font-size:18px;}
   .gols-grid{grid-template-columns:1fr 1fr;}
-  .ranking-section{padding:48px 24px;}
+  .gol-card{padding:16px 12px;}
+  .gol-odd{font-size:20px;}
+  .result-grid{grid-template-columns:1fr;}
+  .result-card{padding:16px;}
+  .result-odd{font-size:22px;}
+
+  /* Bet section */
+  .bet-section-title{font-size:28px;}
+  .bet-section{margin-bottom:40px;}
+
+  /* Slip */
+  .slip-col{position:static;height:auto;padding:32px 20px;border-top:1px solid var(--border);}
+  .slip-title{font-size:26px;}
+
+  /* Ranking */
+  .ranking-section{padding:40px 20px;}
   .ranking-grid{grid-template-columns:1fr;}
-  footer{grid-template-columns:1fr;text-align:center;padding:32px 24px;}
+
+  /* Footer */
+  footer{grid-template-columns:1fr;text-align:center;padding:32px 20px;}
   .f-right{justify-content:center;}
 }
 
