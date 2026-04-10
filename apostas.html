@@ -186,7 +186,7 @@ nav {
 .player-card.selected .player-odd { color:var(--crimson-light); }
 
 /* total gols */
-.gols-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+.gols-grid { display:grid; grid-template-columns:1fr 1fr; gap:2px; }
 .gol-card {
   background:var(--surface); border:1px solid transparent;
   padding:20px 16px; cursor:pointer; transition:all .2s;
@@ -402,7 +402,7 @@ footer {
   .player-card{padding:14px 16px;}
   .player-name{font-size:15px;}
   .player-odd{font-size:18px;}
-  .gols-grid{grid-template-columns:1fr 1fr;}
+  
   .gol-card{padding:16px 12px;}
   .gol-odd{font-size:20px;}
   .result-grid{grid-template-columns:1fr;}
@@ -1084,14 +1084,16 @@ async function init() {
 
   // Calcula média de gols totais por jogo
   const jogosComResultado = jogos.filter(j => j['placar mandimba'] && j['placar visitante']);
+  let mediaGols = 6;
   if (jogosComResultado.length > 0) {
     const totalGols = jogosComResultado.reduce((acc, j) => {
       return acc + parseInt(j['placar mandimba']||0) + parseInt(j['placar visitante']||0);
     }, 0);
-    const media = (totalGols / jogosComResultado.length).toFixed(1);
+    mediaGols = totalGols / jogosComResultado.length;
     const elMedia = document.getElementById('media-gols-desc');
-    if (elMedia) elMedia.textContent = media;
+    if (elMedia) elMedia.textContent = mediaGols.toFixed(1);
   }
+  renderTotalGols(mediaGols);
 
   renderNextMatch(proximo);
   const banner = document.getElementById('match-banner');
@@ -1190,11 +1192,10 @@ async function liquidarApostas(jogo) {
     }
 
     if (aposta.mercado === 'Total de Gols') {
-      if (sel.includes('menos de 4') && totalGols < 4) ganhou = true;
-      if (sel.includes('4 a 5') && totalGols >= 4 && totalGols <= 5) ganhou = true;
-      if (sel.includes('6 a 7') && totalGols >= 6 && totalGols <= 7) ganhou = true;
-      if (sel.includes('8 a 9') && totalGols >= 8 && totalGols <= 9) ganhou = true;
-      if (sel.includes('10') && totalGols >= 10) ganhou = true;
+      const matchMais  = sel.match(/mais de ([\d.]+)/);
+      const matchMenos = sel.match(/menos de ([\d.]+)/);
+      if (matchMais)  ganhou = totalGols > parseFloat(matchMais[1]);
+      if (matchMenos) ganhou = totalGols < parseFloat(matchMenos[1]);
     }
 
     const novoStatus = ganhou ? 'ganhou' : 'perdeu';
@@ -1232,6 +1233,54 @@ function travarApostas() {
   aviso.textContent = '⏱ Apostas encerradas — jogo prestes a começar';
   const banner = document.getElementById('match-banner');
   if (banner) banner.appendChild(aviso);
+}
+
+// ── TOTAL DE GOLS ──
+function renderTotalGols(media) {
+  const wrap = document.getElementById('opts-total-gols');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const linhas = [1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5];
+
+  linhas.forEach(linha => {
+    // Calcula odds usando distribuição de Poisson
+    const lambda = media || 6;
+    let probOver = 0;
+    // P(X > linha) = 1 - P(X <= floor(linha))
+    const k = Math.floor(linha);
+    let probMenos = 0;
+    let fatorial = 1;
+    for (let i = 0; i <= k; i++) {
+      if (i > 0) fatorial *= i;
+      probMenos += Math.pow(lambda, i) * Math.exp(-lambda) / fatorial;
+    }
+    probOver = 1 - probMenos;
+
+    // Margem de 8%
+    const oddOver  = Math.max(1.1, Math.round((1 / probOver)  * 0.92 * 100) / 100);
+    const oddMenos = Math.max(1.1, Math.round((1 / probMenos) * 0.92 * 100) / 100);
+
+    // Card Mais de
+    const cardOver = document.createElement('div');
+    cardOver.className = 'gol-card';
+    cardOver.dataset.cat = 'total_gols';
+    cardOver.dataset.sel = 'Mais de ' + linha + ' gols';
+    cardOver.dataset.odd = oddOver;
+    cardOver.onclick = function(){ toggleBet(this); };
+    cardOver.innerHTML = `<span class="gol-range">Mais de ${linha}</span><span class="gol-odd">${oddOver}×</span>`;
+    wrap.appendChild(cardOver);
+
+    // Card Menos de
+    const cardMenos = document.createElement('div');
+    cardMenos.className = 'gol-card';
+    cardMenos.dataset.cat = 'total_gols';
+    cardMenos.dataset.sel = 'Menos de ' + linha + ' gols';
+    cardMenos.dataset.odd = oddMenos;
+    cardMenos.onclick = function(){ toggleBet(this); };
+    cardMenos.innerHTML = `<span class="gol-range">Menos de ${linha}</span><span class="gol-odd">${oddMenos}×</span>`;
+    wrap.appendChild(cardMenos);
+  });
 }
 
 // Peso por posição — futebol de 7
