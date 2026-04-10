@@ -878,8 +878,8 @@ renderRanking();
 
 
 <script>
-const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv&_=' + Date.now() + '';
-const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv&_=' + Date.now() + '';
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
+const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv';
 
 const selections = {};
 
@@ -906,7 +906,8 @@ function toObjects(rows, headerIdx) {
 async function init() {
   try {
     // Busca jogos
-    const rJ = await fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
+    const t = Math.floor(Date.now()/60000);
+    const rJ = await fetch(CSV_JOGOS + '&t=' + t, {cache:'no-store'});
     const jogos = toObjects(parseCSV(await rJ.text()), 4);
     const hoje2 = new Date();
     hoje2.setHours(0,0,0,0);
