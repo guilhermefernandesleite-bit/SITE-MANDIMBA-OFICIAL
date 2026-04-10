@@ -430,7 +430,7 @@ footer {
 </div>
 
 <!-- MATCH BANNER -->
-<div class="match-banner">
+<div class="match-banner" id="match-banner" style="opacity:0;transition:opacity 0.3s">
   <div class="match-teams-row">
     <span class="mb-team">Mandimba FC</span>
     <span class="mb-vs">versus</span>
@@ -932,6 +932,8 @@ async function init() {
     proximo['_hora_formatada'] = partesDT[1] ? partesDT[1] + 'h' : '—';
   }
   renderNextMatch(proximo);
+  const banner = document.getElementById('match-banner');
+  if(banner) banner.style.opacity = '1';
     renderPlayers(jogadores);
     renderRanking();
     renderHistorico();
