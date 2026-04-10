@@ -212,11 +212,47 @@ footer {
 .f-copy { font-size:11.5px; color:var(--text-dim); opacity:.32; letter-spacing:.12em; }
 
 @media(max-width:960px){
-  nav{padding:0 24px;} .nav-links{display:none;}
-  .page-header{padding:48px 24px 36px;}
-  .main{padding:40px 24px 64px;}
-  .result-row{grid-template-columns:1fr;gap:6px;padding:16px 0;}
-  footer{grid-template-columns:1fr;text-align:center;padding:32px 24px;}
+  nav{padding:0 20px;} .nav-links{display:none;}
+
+  /* Header */
+  .page-header{padding:40px 20px 28px;}
+  .page-title{font-size:clamp(40px,12vw,64px);}
+
+  /* Main */
+  .main{padding:32px 20px 56px;}
+  .section-block{margin-bottom:48px;}
+
+  /* Tabela — esconde colunas menos importantes */
+  table.st{font-size:13px;}
+  .st th{padding:8px 6px;font-size:9px;}
+  .st td{padding:12px 6px;}
+  .st td:first-child{font-size:16px;width:28px;}
+  .st td:nth-child(2){font-size:13px;}
+  .st td:last-child{font-size:16px;}
+  /* Esconde GP, GC, SG, Aprov no mobile */
+  .st th:nth-child(7), .st td:nth-child(7),
+  .st th:nth-child(8), .st td:nth-child(8),
+  .st th:nth-child(9), .st td:nth-child(9),
+  .st th:nth-child(10), .st td:nth-child(10){ display:none; }
+
+  /* Filtros */
+  .filters{gap:8px;}
+  .filter-btn{font-size:11px;padding:6px 12px;}
+
+  /* Jogos */
+  .result-row{
+    grid-template-columns:1fr 1fr;
+    gap:6px; padding:16px 0;
+  }
+  .r-date-comp{grid-column:1/-1;}
+  .r-team{font-size:15px;}
+  .r-team.away{text-align:left;}
+  .r-score{font-size:20px;text-align:left;}
+  .r-badge{justify-content:flex-start;}
+  .r-detalhes{font-size:12px;}
+
+  /* Footer */
+  footer{grid-template-columns:1fr;text-align:center;padding:32px 20px;}
   .f-right{justify-content:center;}
 }
 </style>
