@@ -130,22 +130,7 @@ table.st { width:100%; border-collapse:collapse; font-size:15px; }
 }
 .result-row:first-child { border-top:1px solid var(--border); }
 .result-row:hover { background:rgba(255,255,255,.015); }
-.btn-detalhes {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  font-family: 'EB Garamond', serif;
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  cursor: pointer;
-  margin-top: 6px;
-  display: block;
-  transition: all .2s;
-}
-.btn-detalhes:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
-.btn-detalhes.open { color: var(--crimson-light); border-color: var(--border-red); }
+
 .r-detalhes {
   grid-column: 1 / -1;
   font-size: 13px;
@@ -438,14 +423,12 @@ function renderJogos(jogos) {
       .map(([nome, qtd]) => qtd > 1 ? `${nome} (${qtd})` : nome)
       .join(' · ');
 
-    const btnDetalhes = marcadores.length
-      ? `<button class="btn-detalhes" onclick="toggleDetalhes('${uid}')">ver gols ▾</button>`
-      : '';
+    const clickable = marcadores.length ? `onclick="toggleDetalhes('${uid}')" style="cursor:pointer"` : '';
     const detalhesHTML = marcadores.length
       ? `<div class="r-detalhes" id="${uid}">⚽ ${marcadoresFormatados}</div>`
       : '';
 
-    return `<div class="result-row" data-camp="${camp}" data-res="${label}">
+    return `<div class="result-row" data-camp="${camp}" data-res="${label}" ${clickable}>
       <div class="r-date-comp">
         <span class="r-date">${data}</span>
         <span class="r-comp">${camp}</span>
@@ -453,10 +436,7 @@ function renderJogos(jogos) {
       <span class="r-team">Mandimba</span>
       <span class="r-score ${cls}">${pm} — ${pv}</span>
       <span class="r-team away">${adv}</span>
-      <div class="r-badge">
-        <span class="badge ${cls}">${label}</span>
-        ${btnDetalhes}
-      </div>
+      <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
       ${detalhesHTML}
     </div>`;
   }).join('');
@@ -464,12 +444,8 @@ function renderJogos(jogos) {
 
 function toggleDetalhes(uid) {
   const el = document.getElementById(uid);
-  const btn = el?.previousElementSibling?.querySelector('.btn-detalhes') ||
-              document.querySelector(`[onclick="toggleDetalhes('${uid}')"]`);
   if (!el) return;
   el.classList.toggle('open');
-  if (btn) btn.classList.toggle('open');
-  if (btn) btn.textContent = el.classList.contains('open') ? 'fechar ▴' : 'ver gols ▾';
 }
 
 function filtrarJogos(btn) {
