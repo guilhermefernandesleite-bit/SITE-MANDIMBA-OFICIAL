@@ -24,7 +24,7 @@ const TABS = {
 const _cache = {};
 
 function csvURL(gid) {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  return `https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=${gid}&single=true&output=csv`;
 }
 
 /**
