@@ -940,6 +940,7 @@ async function confirmarAposta() {
       selecao: b.sel,
       creditos_apostados: creditos_apostados,
       bilhete_id,
+      nome_apostador: _profile.apelido || _profile.nome,
       status: 'pendente'
     });
   }
