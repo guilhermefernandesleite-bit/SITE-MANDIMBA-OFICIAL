@@ -278,100 +278,120 @@ footer {
   </div>
 </footer>
 
-<script src="sheets.js"></script>
+
+
+
 <script>
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
+const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=627501198&single=true&output=csv';
+
 let _todosJogos = [];
 
-async function init() {
-  const [jogos, cls] = await Promise.all([
-    MandimbaDB.jogos(),
-    MandimbaDB.classificacao(),
-  ]);
-
-  _todosJogos = jogos.filter(j => {
-    const res = j['resultado'] || '';
-    return res !== '' && res !== '-';
+function parseCSV(text) {
+  return text.trim().split('\n').map(row => {
+    const cols = []; let cur = '', inQ = false;
+    for (let c of row) {
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
   });
+}
 
-  renderClassificacao(cls);
-  renderJogos(_todosJogos);
+function toObjects(rows, headerIdx) {
+  const headers = rows[headerIdx].map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
+  return rows.slice(headerIdx + 1)
+    .filter(r => r[0] && r[0].trim() !== '' && r[0].trim() !== 'TOTAL')
+    .map(r => { const obj = {}; headers.forEach((h,i) => obj[h] = (r[i]||'').trim()); return obj; });
+}
 
-  // Tenta detectar nome do torneio
-  const torneios = [...new Set(_todosJogos.map(j => j['campeonato']).filter(Boolean))];
-  const serie = torneios.find(t => /serie|série/i.test(t));
-  if (serie) document.getElementById('torneio-label').textContent = serie;
+async function init() {
+  try {
+    const [rJogos, rClass] = await Promise.all([
+      fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store'}),
+      fetch(CSV_CLASS + '&t=' + Date.now(), {cache:'no-store'})
+    ]);
+
+    const jogos = toObjects(parseCSV(await rJogos.text()), 4);
+    const classif = toObjects(parseCSV(await rClass.text()), 1);
+
+    // Só jogos com resultado
+    _todosJogos = jogos.filter(j => j['resultado'] && j['resultado'] !== '');
+
+    renderClassificacao(classif);
+    renderJogos(_todosJogos);
+
+    // Nome do torneio
+    const torneios = [...new Set(_todosJogos.map(j => j['campeonato']).filter(Boolean))];
+    const serie = torneios.find(t => /serie|serie/i.test(t));
+    if (serie) {
+      const el = document.getElementById('torneio-label');
+      if (el) el.textContent = serie;
+    }
+  } catch(e) {
+    console.error('Erro:', e);
+  }
 }
 
 function renderClassificacao(cls) {
   const wrap = document.getElementById('classificacao-wrap');
-  if (!cls.length) {
-    wrap.innerHTML = '<div class="loading-state">Sem dados de classificação.</div>';
-    return;
-  }
+  if (!cls.length) { wrap.innerHTML = '<div class="loading-state">Sem dados.</div>'; return; }
   let rows = '';
   cls.forEach((r, i) => {
     const time  = r['time'] || '—';
     const pts   = r['pontos'] || '0';
-    const j     = r['jogos'] || '0';
-    const v     = r['vitorias'] || r['vitórias'] || '0';
+    const j2    = r['jogos'] || '0';
+    const v     = r['vitorias'] || '0';
     const e     = r['empates'] || '0';
     const d     = r['derrotas'] || '0';
-    const gp    = r['gols pro'] || r['gols pró'] || r['gols_pro'] || '0';
-    const gc    = r['gols contra'] || r['gols_contra'] || '0';
-    const sg    = r['saldo de gols'] || r['saldo_de_gols'] || '0';
+    const gp    = r['gols pro'] || '0';
+    const gc    = r['gols contra'] || '0';
+    const sg    = r['saldo de gols'] || '0';
     const aprov = r['aproveitamento'] || '—';
     const isMe  = time.toLowerCase().includes('mandimba');
-    rows += `
-      <tr class="${isMe ? 'me' : ''}">
-        <td>${i+1}</td>
-        <td>${time}</td>
-        <td>${j}</td><td>${v}</td><td>${e}</td><td>${d}</td>
-        <td>${gp}</td><td>${gc}</td><td>${sg}</td>
-        <td>${aprov}</td>
-        <td>${pts}</td>
-      </tr>`;
+    rows += `<tr class="${isMe?'me':''}">
+      <td>${i+1}</td><td>${time}</td>
+      <td>${j2}</td><td>${v}</td><td>${e}</td><td>${d}</td>
+      <td>${gp}</td><td>${gc}</td><td>${sg}</td>
+      <td>${aprov}</td><td>${pts}</td>
+    </tr>`;
   });
-  wrap.innerHTML = `
-    <table class="st">
-      <thead>
-        <tr>
-          <th>#</th><th>Clube</th>
-          <th>J</th><th>V</th><th>E</th><th>D</th>
-          <th>GP</th><th>GC</th><th>SG</th>
-          <th>Aprov.</th><th>Pts</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  wrap.innerHTML = `<table class="st">
+    <thead><tr>
+      <th>#</th><th>Clube</th>
+      <th>J</th><th>V</th><th>E</th><th>D</th>
+      <th>GP</th><th>GC</th><th>SG</th>
+      <th>Aprov.</th><th>Pts</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 function renderJogos(jogos) {
   const wrap = document.getElementById('jogos-wrap');
-  if (!jogos.length) {
-    wrap.innerHTML = '<div class="loading-state">Nenhum jogo encontrado.</div>';
-    return;
-  }
+  if (!jogos.length) { wrap.innerHTML = '<div class="loading-state">Nenhum jogo encontrado.</div>'; return; }
   wrap.innerHTML = jogos.map(j => {
-    const res   = (j['resultado'] || '').toLowerCase();
-    const pm    = j['placar mandimba']  || j['placar_mandimba']  || '0';
-    const pv    = j['placar visitante'] || j['placar_visitante'] || '0';
-    const adv   = j['adversario']       || j['adversário']       || '—';
-    const data  = j['data'] || '—';
-    const camp  = j['campeonato'] || '';
+    const res  = (j['resultado']||'').toLowerCase();
+    const pm   = j['placar mandimba'] || '0';
+    const pv   = j['placar visitante'] || '0';
+    const adv  = j['adversario'] || '—';
+    const data = j['data'] || '—';
+    const camp = j['campeonato'] || '';
     let cls = 'draw', label = 'Empate';
     if (res.includes('vit')) { cls = 'win';  label = 'Vitória'; }
     if (res.includes('der')) { cls = 'loss'; label = 'Derrota'; }
-    return `
-      <div class="result-row" data-camp="${camp}" data-res="${label}">
-        <div class="r-date-comp">
-          <span class="r-date">${data}</span>
-          <span class="r-comp">${camp}</span>
-        </div>
-        <span class="r-team">Mandimba</span>
-        <span class="r-score ${cls}">${pm} — ${pv}</span>
-        <span class="r-team away">${adv}</span>
-        <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
-      </div>`;
+    return `<div class="result-row" data-camp="${camp}" data-res="${label}">
+      <div class="r-date-comp">
+        <span class="r-date">${data}</span>
+        <span class="r-comp">${camp}</span>
+      </div>
+      <span class="r-team">Mandimba</span>
+      <span class="r-score ${cls}">${pm} — ${pv}</span>
+      <span class="r-team away">${adv}</span>
+      <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
+    </div>`;
   }).join('');
 }
 
