@@ -318,7 +318,17 @@ async function init() {
     const classif = toObjects(parseCSV(await rClass.text()), 1);
 
     // Só jogos com resultado
-    _todosJogos = jogos.filter(j => j['resultado'] && j['resultado'] !== '');
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    _todosJogos = jogos.filter(j => {
+      if (!j['resultado'] || j['resultado'] === '') return false;
+      const partes = (j['data']||'').trim().split(' ')[0].split('/');
+      if (partes.length === 3) {
+        const dataJogo = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+        if (dataJogo >= hoje) return false;
+      }
+      return true;
+    });
 
     renderClassificacao(classif);
     renderJogos(_todosJogos);
