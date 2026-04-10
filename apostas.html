@@ -673,28 +673,7 @@ footer {
     <div class="bet-section">
       <h2 class="bet-section-title">Total de <em>gols</em></h2>
       <p class="bet-section-desc">Média de <span id="media-gols-desc">—</span> gols por jogo (ambos os times). Quanto será hoje?</p>
-      <div class="gols-grid">
-        <div class="gol-card" data-cat="total_gols" data-sel="Menos de 4 gols" data-odd="5.0" onclick="toggleBet(this)">
-          <span class="gol-range">Menos de 4</span>
-          <span class="gol-odd">5.0×</span>
-        </div>
-        <div class="gol-card" data-cat="total_gols" data-sel="4 a 5 gols" data-odd="3.5" onclick="toggleBet(this)">
-          <span class="gol-range">4 a 5 gols</span>
-          <span class="gol-odd">3.5×</span>
-        </div>
-        <div class="gol-card" data-cat="total_gols" data-sel="6 a 7 gols" data-odd="2.2" onclick="toggleBet(this)">
-          <span class="gol-range">6 a 7 gols</span>
-          <span class="gol-odd">2.2×</span>
-        </div>
-        <div class="gol-card" data-cat="total_gols" data-sel="8 a 9 gols" data-odd="4.0" onclick="toggleBet(this)">
-          <span class="gol-range">8 a 9 gols</span>
-          <span class="gol-odd">4.0×</span>
-        </div>
-        <div class="gol-card" data-cat="total_gols" data-sel="10 ou mais gols" data-odd="7.0" onclick="toggleBet(this)">
-          <span class="gol-range">10 ou mais</span>
-          <span class="gol-odd">7.0×</span>
-        </div>
-      </div>
+      <div class="gols-grid" id="opts-total-gols"></div>
     </div>
 
   </div><!-- /apostas-col -->
