@@ -66,6 +66,10 @@ function toObjects(rows, headerRowIndex = 0) {
   if (!rows || rows.length <= headerRowIndex) return [];
   const headers = rows[headerRowIndex].map(h => norm(h));
   return rows.slice(headerRowIndex + 1)
+    .filter(r => {
+      const first = (r[0] || '').toString().trim();
+      return first !== '' && first !== 'TOTAL';
+    })
     .filter(r => r.some(c => c !== ''))
     .map(r => {
       const obj = {};
@@ -123,6 +127,7 @@ async function ensureGIDs() {
   // (gid=0 é sempre a primeira aba; as demais são descobertas acima)
   // Com base nas imagens: JOGOS é provavelmente a 1ª aba (gid=0)
   if (!TABS.jogos.gid)         TABS.jogos.gid         = '653989414';
+  TABS.jogos.headerRow = 4;
   if (!TABS.classificacao.gid) TABS.classificacao.gid  = '627501198'; // capturado da URL ao abrir
   if (!TABS.jogadores.gid)     TABS.jogadores.gid      = '479712378'; // estimado
 
