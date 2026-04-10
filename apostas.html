@@ -906,12 +906,12 @@ function toObjects(rows, headerIdx) {
 async function init() {
   try {
     // Busca jogos
-    const rJ = await fetch(CSV_JOGOS, {cache:'no-store'});
+    const rJ = await fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
     const jogos = toObjects(parseCSV(await rJ.text()), 4);
     const proximo = jogos.find(j => !j['resultado'] || !j['placar mandimba']);
 
     // Busca jogadores
-    const rP = await fetch(CSV_JOGS, {cache:'no-store'});
+    const rP = await fetch(CSV_JOGS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
     const jogadores = toObjects(parseCSV(await rP.text()), 4);
 
     renderNextMatch(proximo);

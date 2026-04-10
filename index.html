@@ -554,7 +554,7 @@ function toObjects(rows, headerIdx) {
 async function init() {
   try {
     // JOGOS
-    const rJogos = await fetch(CSV_JOGOS, {cache:'no-store'});
+    const rJogos = await fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
     const textJogos = await rJogos.text();
     const rowsJogos = parseCSV(textJogos);
     const jogos = toObjects(rowsJogos, 4);
@@ -599,7 +599,7 @@ async function init() {
     }
 
     // CLASSIFICAÇÃO
-    const rClass = await fetch(CSV_CLASS, {cache:'no-store'});
+    const rClass = await fetch(CSV_CLASS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
     const textClass = await rClass.text();
     const rowsClass = parseCSV(textClass);
     const classif = toObjects(rowsClass, 1);
