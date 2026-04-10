@@ -924,15 +924,22 @@ async function confirmarAposta() {
 
   // Salva cada mercado como uma aposta
   const jogo = document.getElementById('mb-away')?.textContent || 'Próximo jogo';
+  const bilhete_id = 'B' + Date.now();
   for (const b of all) {
+    const cat = b.el?.dataset?.cat || '';
+    const mercado = b.sel.includes('marca') ? 'Marca Gol' :
+               b.sel.includes('vence') || b.sel === 'Empate' ? 'Resultado' :
+               cat === 'total_gols' ? 'Total de Gols' :
+               cat === 'gols_mandimba' ? 'Gols Mandimba' :
+               cat === 'gols_adv' ? 'Gols Adversário' :
+               'Total de Gols';
     await _sb.from('apostas').insert({
       user_id: _profile.id,
       jogo_descricao: 'Mandimba FC vs ' + jogo,
-      mercado: b.sel.includes('marca') ? 'Marca Gol' :
-               b.sel.includes('vence') || b.sel === 'Empate' ? 'Resultado' :
-               'Primeiro Gol',
+      mercado,
       selecao: b.sel,
       creditos_apostados: creditos_apostados,
+      bilhete_id,
       status: 'pendente'
     });
   }
