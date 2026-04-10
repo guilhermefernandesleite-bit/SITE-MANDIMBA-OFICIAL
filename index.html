@@ -348,17 +348,62 @@ footer {
 .next-panel { animation:up .8s .28s both; }
 
 @media(max-width:960px){
-  nav{padding:0 24px;} .nav-links{display:none;}
-  .hero{grid-template-columns:1fr;}
-  .hero-left{padding:60px 28px 72px;}
+  nav{padding:0 20px;} .nav-links{display:none;}
+  .nav-ig span { display:none; }
+
+  /* Hero */
+  .hero{grid-template-columns:1fr; min-height:auto;}
+  .hero-left{padding:88px 24px 48px;}
+  .hero-title{font-size:clamp(52px,14vw,80px); margin-bottom:20px;}
+  .hero-sub{font-size:15px; margin-bottom:36px;}
+  .hero-watermark{font-size:120px;}
+  .btn-fill{padding:12px 28px; font-size:12.5px;}
+  .btn-ghost-text{font-size:12.5px;}
+
+  /* Próxima partida */
   .hero-right{border-left:none;border-top:1px solid var(--border);}
-  .next-panel{padding:40px 28px;}
-  .sec{padding:64px 24px;}
-  .result-row{grid-template-columns:1fr;gap:8px;}
-  .fantasy-wrap{padding:0 24px 64px;}
-  .fantasy-box{grid-template-columns:1fr;padding:40px 28px;}
-  footer{grid-template-columns:1fr;text-align:center;padding:40px 24px;}
+  .next-panel{padding:32px 24px;}
+  .match-team{font-size:17px;}
+  .cd-num{font-size:24px;}
+  .meta-grid{gap:14px; margin:20px 0;}
+  .meta-val{font-size:15px;}
+
+  /* Seções */
+  .sec{padding:48px 20px;}
+  .sec-title{font-size:36px;}
+  .sec-head{flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:32px;}
+
+  /* Resultados */
+  .result-row{
+    grid-template-columns:1fr 1fr;
+    gap:6px; padding:18px 0;
+  }
+  .r-date-comp{grid-column:1/-1;}
+  .r-team{font-size:15px;}
+  .r-team.away{text-align:left;}
+  .r-score{font-size:20px; text-align:left;}
+  .r-badge{justify-content:flex-start;}
+
+  /* Tabela */
+  table.st{font-size:13px;}
+  .st th{padding:8px 6px; font-size:9px;}
+  .st td{padding:14px 6px;}
+  .st td:first-child{font-size:18px; width:32px;}
+  .st td:nth-child(2){font-size:14px;}
+  .st td:last-child{font-size:18px;}
+
+  /* Fantasy box */
+  .fantasy-wrap{padding:0 20px 48px;}
+  .fantasy-box{grid-template-columns:1fr;padding:32px 24px;gap:24px;}
+  .fantasy-title{font-size:36px;}
+  .fantasy-desc{font-size:14px;}
+
+  /* Footer */
+  footer{grid-template-columns:1fr;text-align:center;padding:32px 20px;gap:16px;}
   .f-right{justify-content:center;}
+
+  /* Botão atualizar */
+  #btn-refresh{bottom:16px;right:16px;padding:8px 14px;font-size:11px;}
 }
 </style>
 </head>
