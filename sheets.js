@@ -15,9 +15,9 @@ const SHEET_ID = '1Wv6vyuujDWY3mUIsC04leLcF2aygdwZeZ-uAu0v02jI';
 // URLs de export CSV por nome de aba (gid descoberto dinamicamente ou fixo)
 // Nomes das abas conforme visto na planilha
 const TABS = {
-  jogos:         { name: 'JOGOS',          gid: '653989414' },
-  classificacao: { name: 'CLASSIFICAÇÃO',  gid: '627501198' },
-  jogadores:     { name: 'JOGADORES',      gid: '479712378' },
+  jogos:         { name: 'JOGOS',          gid: '653989414', headerRow: 4 },
+  classificacao: { name: 'CLASSIFICAÇÃO',  gid: '627501198', headerRow: 1 },
+  jogadores:     { name: 'JOGADORES',      gid: '479712378', headerRow: 4 },
 };
 
 // Cache em memória para não re-fetchar na mesma sessão
@@ -135,7 +135,8 @@ async function ensureGIDs() {
  * @param {'jogos'|'classificacao'|'jogadores'} tab
  * @param {number} headerRow  índice da linha de header (0-based)
  */
-async function fetchTab(tab, headerRow = 0) {
+async function fetchTab(tab, headerRow) {
+  if (headerRow === undefined) headerRow = TABS[tab].headerRow ?? 0;
   if (_cache[tab]) return _cache[tab];
   await ensureGIDs();
   const url = csvURL(TABS[tab].gid);
