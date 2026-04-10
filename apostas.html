@@ -878,8 +878,8 @@ renderRanking();
 
 
 <script>
-const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
-const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv';
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv&_=' + Date.now() + '';
+const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv&_=' + Date.now() + '';
 
 const selections = {};
 
@@ -906,12 +906,12 @@ function toObjects(rows, headerIdx) {
 async function init() {
   try {
     // Busca jogos
-    const rJ = await fetch(CSV_JOGOS);
+    const rJ = await fetch(CSV_JOGOS, {cache:'no-store'});
     const jogos = toObjects(parseCSV(await rJ.text()), 4);
     const proximo = jogos.find(j => !j['resultado'] || !j['placar mandimba']);
 
     // Busca jogadores
-    const rP = await fetch(CSV_JOGS);
+    const rP = await fetch(CSV_JOGS, {cache:'no-store'});
     const jogadores = toObjects(parseCSV(await rP.text()), 4);
 
     renderNextMatch(proximo);

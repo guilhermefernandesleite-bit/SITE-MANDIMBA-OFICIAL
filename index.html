@@ -524,8 +524,8 @@ footer {
 
 
 <script>
-const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
-const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=627501198&single=true&output=csv';
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv&_=' + Date.now() + '';
+const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=627501198&single=true&output=csv&_=' + Date.now() + '';
 
 function parseCSV(text) {
   return text.trim().split('\n').map(row => {
@@ -554,7 +554,7 @@ function toObjects(rows, headerIdx) {
 async function init() {
   try {
     // JOGOS
-    const rJogos = await fetch(CSV_JOGOS);
+    const rJogos = await fetch(CSV_JOGOS, {cache:'no-store'});
     const textJogos = await rJogos.text();
     const rowsJogos = parseCSV(textJogos);
     const jogos = toObjects(rowsJogos, 4);
@@ -599,7 +599,7 @@ async function init() {
     }
 
     // CLASSIFICAÇÃO
-    const rClass = await fetch(CSV_CLASS);
+    const rClass = await fetch(CSV_CLASS, {cache:'no-store'});
     const textClass = await rClass.text();
     const rowsClass = parseCSV(textClass);
     const classif = toObjects(rowsClass, 1);
