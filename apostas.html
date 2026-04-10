@@ -908,7 +908,16 @@ async function init() {
     // Busca jogos
     const rJ = await fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
     const jogos = toObjects(parseCSV(await rJ.text()), 4);
-    const proximo = jogos.find(j => !j['resultado'] || !j['placar mandimba']);
+    const hoje2 = new Date();
+    hoje2.setHours(0,0,0,0);
+    const proximo = jogos.find(j => {
+      const partes = (j['data']||'').trim().split(' ')[0].split('/');
+      if (partes.length === 3) {
+        const dataJogo = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+        return dataJogo >= hoje2;
+      }
+      return false;
+    });
 
     // Busca jogadores
     const rP = await fetch(CSV_JOGS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
