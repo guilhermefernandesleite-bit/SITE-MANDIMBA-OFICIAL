@@ -570,7 +570,17 @@ async function init() {
     }
 
     // Últimos 5 jogos com resultado
-    const comResultado = jogos.filter(j => j['resultado'] && j['resultado'] !== '').reverse().slice(0, 5);
+    const hoje = new Date();
+    const comResultado = jogos.filter(j => {
+      if (!j['resultado'] || j['resultado'] === '') return false;
+      // Verifica se a data do jogo já passou
+      const partes = (j['data'] || '').split('/');
+      if (partes.length === 3) {
+        const dataJogo = new Date(partes[2], partes[0]-1, partes[1]);
+        if (dataJogo > hoje) return false;
+      }
+      return true;
+    }).reverse().slice(0, 5);
     const container = document.getElementById('results');
     if (comResultado.length) {
       container.innerHTML = '';
