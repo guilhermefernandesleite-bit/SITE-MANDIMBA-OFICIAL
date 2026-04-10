@@ -873,242 +873,198 @@ function renderRanking() {
 renderRanking();
 </script>
 
-<script src="sheets.js"></script>
+
+
+
+
 <script>
-/* ── ESTADO ─────────────────────────────── */
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
+const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv';
+
 const selections = {};
 
-/* ── INIT ───────────────────────────────── */
-async function init() {
-  const [proximoJogo, jogadores] = await Promise.all([
-    MandimbaDB.proximoJogo(),
-    MandimbaDB.jogadores(),
-  ]);
-
-  renderNextMatch(proximoJogo);
-  renderPlayers(jogadores);
-  renderRanking();
-  renderHistorico();
-  renderMyStats();
+function parseCSV(text) {
+  return text.trim().split('\n').map(row => {
+    const cols = []; let cur = '', inQ = false;
+    for (let c of row) {
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
 }
 
-/* ── PRÓXIMO JOGO ───────────────────────── */
+function toObjects(rows, headerIdx) {
+  const headers = rows[headerIdx].map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
+  return rows.slice(headerIdx + 1)
+    .filter(r => r[0] && r[0] !== 'TOTAL' && r.some(c => c !== ''))
+    .map(r => { const obj = {}; headers.forEach((h,i) => obj[h] = r[i]||''); return obj; });
+}
+
+async function init() {
+  try {
+    // Busca jogos
+    const rJ = await fetch(CSV_JOGOS);
+    const jogos = toObjects(parseCSV(await rJ.text()), 4);
+    const proximo = jogos.find(j => !j['resultado'] || !j['placar mandimba']);
+
+    // Busca jogadores
+    const rP = await fetch(CSV_JOGS);
+    const jogadores = toObjects(parseCSV(await rP.text()), 4);
+
+    renderNextMatch(proximo);
+    renderPlayers(jogadores);
+    renderRanking();
+    renderHistorico();
+    renderMyStats();
+  } catch(e) {
+    console.error('Erro:', e);
+    renderNextMatch(null);
+    renderPlayers([]);
+    renderRanking();
+    renderHistorico();
+    renderMyStats();
+  }
+}
+
 function renderNextMatch(jogo) {
-  const adv  = jogo ? (jogo['adversario'] || jogo['adversário'] || 'A definir') : 'A definir';
-  const data = jogo ? (jogo['data'] || '—') : '—';
-  const local = jogo ? (jogo['local'] || jogo['campeonato'] || '—') : '—';
-
+  const adv   = jogo ? (jogo['adversario'] || 'A definir') : 'A definir';
+  const data  = jogo ? (jogo['data'] || '—') : '—';
+  const local = jogo ? (jogo['campeonato'] || '—') : '—';
   const el = id => document.getElementById(id);
-  if (el('rodada-num'))  el('rodada-num').textContent  = jogo ? (jogo['rodada'] || '—') : '—';
-  if (el('match-local')) el('match-local').textContent = local;
-  if (el('match-date'))  el('match-date').textContent  = data;
-  if (el('team-home'))   el('team-home').textContent   = 'Mandimba FC';
-  if (el('team-away'))   el('team-away').textContent   = adv;
-  if (el('opt-home-name')) el('opt-home-name').textContent = 'Mandimba FC';
-  if (el('opt-away-name')) el('opt-away-name').textContent = adv;
-
-  // Gols totais
+  if(el('rodada-num'))   el('rodada-num').textContent  = '—';
+  if(el('match-local'))  el('match-local').textContent = local;
+  if(el('match-date'))   el('match-date').textContent  = data;
+  if(el('team-home'))    el('team-home').textContent   = 'Mandimba FC';
+  if(el('team-away'))    el('team-away').textContent   = adv;
+  if(el('opt-home-name')) el('opt-home-name').textContent = 'Mandimba FC';
+  if(el('opt-away-name')) el('opt-away-name').textContent = adv;
   const goalsWrap = document.getElementById('opts-gols');
-  if (goalsWrap) {
+  if(goalsWrap) {
     goalsWrap.innerHTML = '';
-    for (let i = 0; i <= 10; i++) {
-      const b = document.createElement('button');
-      b.className = 'goal-btn';
-      b.textContent = i === 10 ? '10+' : String(i);
-      b.dataset.val = String(i);
-      b.onclick = () => selectGoals(b);
+    for(let i=0;i<=10;i++){
+      const b=document.createElement('button');
+      b.className='goal-btn';b.textContent=i===10?'10+':String(i);
+      b.dataset.val=String(i);b.onclick=()=>selectGoals(b);
       goalsWrap.appendChild(b);
     }
   }
 }
 
-/* ── JOGADORES ──────────────────────────── */
 function renderPlayers(jogadores) {
-  // Ordena por gols desc para mostrar os mais prováveis primeiro
-  const sorted = [...jogadores]
-    .sort((a, b) => Number(b['gols']||0) - Number(a['gols']||0));
-
+  const sorted = [...jogadores].sort((a,b)=>Number(b['gols']||0)-Number(a['gols']||0));
   const pg = document.getElementById('opts-primeiro-gol');
   const mg = document.getElementById('opts-marca');
-  if (!pg || !mg) return;
-  pg.innerHTML = '';
-  mg.innerHTML = '';
-
-  sorted.slice(0, 8).forEach(p => {
-    const nome = p['nome'] || '—';
-    const gols = p['gols'] || '0';
-    pg.appendChild(makePlayerOpt(nome, 'primeirogol', 30, `${gols} gols`));
-    mg.appendChild(makePlayerOpt(nome, 'marca', 15, `${gols} gols`));
+  if(!pg||!mg) return;
+  pg.innerHTML=''; mg.innerHTML='';
+  sorted.slice(0,8).forEach(p => {
+    const nome = p['nome']||'—';
+    const gols = p['gols']||'0';
+    pg.appendChild(makePlayerOpt(nome,'primeirogol',30,gols+' gols'));
+    mg.appendChild(makePlayerOpt(nome,'marca',15,gols+' gols'));
   });
 }
 
-function makePlayerOpt(nome, cat, pts, sub) {
-  const div = document.createElement('div');
-  div.className = 'bet-option';
-  div.dataset.cat = cat;
-  div.dataset.val = nome;
-  div.innerHTML = `
-    <div>
-      <span class="opt-name">${nome}</span>
-      <span style="font-size:0.72rem;opacity:0.4;display:block;letter-spacing:0.05em">${sub}</span>
-    </div>
-    <div class="opt-pts">${pts} pts</div>`;
-  div.onclick = () => selectOpt(div);
+function makePlayerOpt(nome,cat,pts,sub) {
+  const div=document.createElement('div');
+  div.className='bet-option';div.dataset.cat=cat;div.dataset.val=nome;
+  div.innerHTML=`<div><span class="opt-name">${nome}</span><span style="font-size:0.72rem;opacity:0.4;display:block">${sub}</span></div><div class="opt-pts">${pts} pts</div>`;
+  div.onclick=()=>selectOpt(div);
   return div;
 }
 
-/* ── RANKING (localStorage) ─────────────── */
-function getRanking() {
-  try {
-    return JSON.parse(localStorage.getItem('mandimba_ranking') || '[]');
-  } catch { return []; }
-}
-
 function renderRanking() {
-  const ranking = getRanking();
-  const tbody = document.getElementById('ranking-body');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  if (!ranking.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;opacity:0.3;padding:2rem;font-size:0.85rem">Nenhuma aposta confirmada ainda</td></tr>';
-    return;
-  }
-  ranking
-    .sort((a, b) => b.pts - a.pts)
-    .forEach((r, i) => {
-      tbody.innerHTML += `
-        <tr>
-          <td class="pos">${i+1}</td>
-          <td class="nome">${r.nome}</td>
-          <td>${r.apostas}</td>
-          <td>${r.acertos}</td>
-          <td class="pts">${r.pts}</td>
-        </tr>`;
-    });
-}
-
-/* ── HISTÓRICO (localStorage) ───────────── */
-function renderHistorico() {
-  const grid = document.getElementById('historico-grid');
-  if (!grid) return;
-  const hist = JSON.parse(localStorage.getItem('mandimba_historico') || '[]');
-  if (!hist.length) {
-    grid.innerHTML = '<div style="padding:2rem;opacity:0.3;font-size:0.85rem;text-align:center">Nenhum histórico ainda — faça sua primeira aposta!</div>';
-    return;
-  }
-  grid.innerHTML = '';
-  hist.slice().reverse().forEach(h => {
-    grid.innerHTML += `
-      <div class="hist-card">
-        <div class="rodada">${h.partida || '—'}</div>
-        <div class="partida">${Object.entries(h.sels).map(([k,v]) => `${k}: ${v}`).join(' · ')}</div>
-        <div class="resultado-row">
-          <span class="aposta-feita">${new Date(h.ts).toLocaleDateString('pt-BR')}</span>
-          <span class="pts-ganhos">pendente</span>
-        </div>
-      </div>`;
+  const tbody=document.getElementById('ranking-body');
+  if(!tbody) return;
+  const ranking=JSON.parse(localStorage.getItem('mandimba_ranking')||'[]');
+  if(!ranking.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;opacity:0.3;padding:2rem;font-size:0.85rem">Nenhuma aposta confirmada ainda</td></tr>';return;}
+  tbody.innerHTML='';
+  ranking.sort((a,b)=>b.pts-a.pts).forEach((r,i)=>{
+    tbody.innerHTML+=`<tr><td class="pos">${i+1}</td><td class="nome">${r.nome}</td><td>${r.apostas}</td><td>${r.acertos}</td><td class="pts">${r.pts}</td></tr>`;
   });
 }
 
-/* ── STATS (localStorage) ───────────────── */
-function renderMyStats() {
-  const hist = JSON.parse(localStorage.getItem('mandimba_historico') || '[]');
-  const el = id => document.getElementById(id);
-  if (el('stat-total'))   el('stat-total').textContent   = hist.reduce((a,h) => a + (h.pts||0), 0);
-  if (el('stat-acertos')) el('stat-acertos').textContent = hist.filter(h => (h.pts||0) > 0).length;
-  if (el('stat-apostas')) el('stat-apostas').textContent = hist.length;
-  if (el('stat-pos'))     el('stat-pos').textContent     = '—';
+function renderHistorico() {
+  const grid=document.getElementById('historico-grid');
+  if(!grid) return;
+  const hist=JSON.parse(localStorage.getItem('mandimba_historico')||'[]');
+  if(!hist.length){grid.innerHTML='<div style="padding:2rem;opacity:0.3;font-size:0.85rem;text-align:center">Nenhum histórico ainda</div>';return;}
+  grid.innerHTML='';
+  hist.slice().reverse().forEach(h=>{
+    grid.innerHTML+=`<div class="hist-card"><div class="rodada">${h.partida||'—'}</div><div class="partida">${Object.entries(h.sels||{}).map(([k,v])=>k+': '+v).join(' · ')}</div><div class="resultado-row"><span class="aposta-feita">${new Date(h.ts).toLocaleDateString('pt-BR')}</span><span class="pts-ganhos">pendente</span></div></div>`;
+  });
 }
 
-/* ── SELEÇÃO ────────────────────────────── */
+function renderMyStats() {
+  const hist=JSON.parse(localStorage.getItem('mandimba_historico')||'[]');
+  const el=id=>document.getElementById(id);
+  if(el('stat-total'))   el('stat-total').textContent=hist.reduce((a,h)=>a+(h.pts||0),0);
+  if(el('stat-acertos')) el('stat-acertos').textContent=hist.filter(h=>(h.pts||0)>0).length;
+  if(el('stat-apostas')) el('stat-apostas').textContent=hist.length;
+  if(el('stat-pos'))     el('stat-pos').textContent='—';
+}
+
 function selectOpt(el) {
-  const cat = el.dataset.cat;
-  document.querySelectorAll(`.bet-option[data-cat="${cat}"]`).forEach(o => o.classList.remove('selected'));
+  const cat=el.dataset.cat;
+  document.querySelectorAll(`.bet-option[data-cat="${cat}"]`).forEach(o=>o.classList.remove('selected'));
   el.classList.toggle('selected');
-  if (el.classList.contains('selected')) selections[cat] = el.dataset.val;
+  if(el.classList.contains('selected')) selections[cat]=el.dataset.val;
   else delete selections[cat];
   updateConfirmPanel();
 }
 
 function selectGoals(btn) {
-  document.querySelectorAll('.goal-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.goal-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.toggle('selected');
-  if (btn.classList.contains('selected')) selections['gols'] = btn.dataset.val;
+  if(btn.classList.contains('selected')) selections['gols']=btn.dataset.val;
   else delete selections['gols'];
   updateConfirmPanel();
 }
 
 function updateConfirmPanel() {
-  const list   = document.getElementById('selections-list');
-  const btn    = document.getElementById('btn-confirmar');
-  const potEl  = document.getElementById('pot-pts');
-  if (!list) return;
-
-  const labels = { resultado:'Resultado', primeirogol:'Primeiro gol', marca:'Quem marca', gols:'Total de gols' };
-  const pts    = { resultado:{ home:20, empate:25, away:20 }, primeirogol:{ _any:30 }, marca:{ _any:15 }, gols:{ _any:20 } };
-
-  if (!Object.keys(selections).length) {
-    list.innerHTML = '<li style="opacity:0.35;font-size:0.82rem;justify-content:center">Nenhuma aposta feita ainda</li>';
-    if (potEl) potEl.textContent = '0';
-    if (btn) btn.disabled = true;
-    return;
+  const list=document.getElementById('selections-list');
+  const btn=document.getElementById('btn-confirmar');
+  const potEl=document.getElementById('pot-pts');
+  if(!list) return;
+  const labels={resultado:'Resultado',primeirogol:'Primeiro gol',marca:'Quem marca',gols:'Total de gols'};
+  const pts={resultado:{home:20,empate:25,away:20},primeirogol:{_any:30},marca:{_any:15},gols:{_any:20}};
+  if(!Object.keys(selections).length){
+    list.innerHTML='<li style="opacity:0.35;font-size:0.82rem;justify-content:center">Nenhuma aposta feita ainda</li>';
+    if(potEl) potEl.textContent='0';if(btn) btn.disabled=true;return;
   }
-
-  let total = 0;
-  list.innerHTML = '';
-  Object.entries(selections).forEach(([cat, val]) => {
-    const p = pts[cat]?.[val] ?? pts[cat]?._any ?? 0;
-    total += p;
-    const li = document.createElement('li');
-    li.innerHTML = `<span>${labels[cat]||cat}</span><span>${val} · ${p} pts</span>`;
+  let total=0;list.innerHTML='';
+  Object.entries(selections).forEach(([cat,val])=>{
+    const p=pts[cat]?.[val]??pts[cat]?._any??0;total+=p;
+    const li=document.createElement('li');
+    li.innerHTML=`<span>${labels[cat]||cat}</span><span>${val} · ${p} pts</span>`;
     list.appendChild(li);
   });
-
-  if (Object.keys(selections).length === 4) {
-    total += 10;
-    const li = document.createElement('li');
-    li.innerHTML = `<span style="color:var(--crimson);opacity:0.8">Bônus — todas as categorias</span><span>+10 pts</span>`;
-    list.appendChild(li);
-  }
-
-  if (potEl) potEl.textContent = total;
-  if (btn) btn.disabled = false;
+  if(Object.keys(selections).length===4){total+=10;const li=document.createElement('li');li.innerHTML='<span style="color:var(--crimson)">Bônus — todas as categorias</span><span>+10 pts</span>';list.appendChild(li);}
+  if(potEl) potEl.textContent=total;
+  if(btn) btn.disabled=false;
 }
 
-/* ── CONFIRMAR ──────────────────────────── */
 function confirmarApostas() {
-  if (!Object.keys(selections).length) return;
-
-  const hist = JSON.parse(localStorage.getItem('mandimba_historico') || '[]');
-  hist.push({
-    ts: new Date().toISOString(),
-    partida: document.getElementById('team-away')?.textContent || '—',
-    sels: { ...selections },
-    pts: 0,
-  });
-  localStorage.setItem('mandimba_historico', JSON.stringify(hist));
-
+  if(!Object.keys(selections).length) return;
+  const hist=JSON.parse(localStorage.getItem('mandimba_historico')||'[]');
+  hist.push({ts:new Date().toISOString(),partida:document.getElementById('team-away')?.textContent||'—',sels:{...selections},pts:0});
+  localStorage.setItem('mandimba_historico',JSON.stringify(hist));
   showToast('Apostas confirmadas! Boa sorte.');
-  document.querySelectorAll('.bet-option.selected').forEach(o => o.classList.remove('selected'));
-  document.querySelectorAll('.goal-btn.selected').forEach(b => b.classList.remove('selected'));
-  Object.keys(selections).forEach(k => delete selections[k]);
-  updateConfirmPanel();
-  renderHistorico();
-  renderMyStats();
+  document.querySelectorAll('.bet-option.selected').forEach(o=>o.classList.remove('selected'));
+  document.querySelectorAll('.goal-btn.selected').forEach(b=>b.classList.remove('selected'));
+  Object.keys(selections).forEach(k=>delete selections[k]);
+  updateConfirmPanel();renderHistorico();renderMyStats();
 }
 
-/* ── TOAST ──────────────────────────────── */
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
+  const t=document.getElementById('toast');if(!t) return;
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
 }
 
-/* ── BOOT ───────────────────────────────── */
 init();
 </script>
-
 </body>
 </html>
