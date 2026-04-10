@@ -523,162 +523,7 @@ footer {
 
 
 
-<script>
-const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv&_=' + Date.now() + '';
-const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=627501198&single=true&output=csv&_=' + Date.now() + '';
 
-function parseCSV(text) {
-  return text.trim().split('\n').map(row => {
-    const cols = []; let cur = '', inQ = false;
-    for (let c of row) {
-      if (c === '"') { inQ = !inQ; continue; }
-      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
-      cur += c;
-    }
-    cols.push(cur.trim());
-    return cols;
-  });
-}
-
-function toObjects(rows, headerIdx) {
-  const headers = rows[headerIdx].map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
-  return rows.slice(headerIdx + 1)
-    .filter(r => r[0] && r[0] !== 'TOTAL' && r.some(c => c !== ''))
-    .map(r => {
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = r[i] || '');
-      return obj;
-    });
-}
-
-async function init() {
-  try {
-    // JOGOS
-    const rJogos = await fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
-    const textJogos = await rJogos.text();
-    const rowsJogos = parseCSV(textJogos);
-    const jogos = toObjects(rowsJogos, 4);
-
-    // Próximo jogo (sem resultado ou sem placar)
-    const proximo = jogos.find(j => {
-      // Jogo futuro = sem resultado OU data futura
-      const dataStr = (j['data'] || '').trim();
-      const partes = dataStr.split(' ')[0].split('/');
-      if (partes.length === 3) {
-        const dia = parseInt(partes[0]);
-        const mes = parseInt(partes[1]) - 1;
-        const ano = parseInt(partes[2]) + 2000;
-        const dataJogo = new Date(ano, mes, dia);
-        if (dataJogo >= hoje) return true;
-      }
-      return false;
-    });
-    if (proximo) {
-      document.getElementById('opp-name').textContent = proximo['adversario'] || 'A definir';
-      document.getElementById('opp-badge').textContent = (proximo['adversario'] || 'A').slice(0,3).toUpperCase();
-      document.getElementById('m-date').textContent = proximo['data'] || '—';
-      document.getElementById('m-time').textContent = '—';
-      document.getElementById('m-local').textContent = proximo['campeonato'] || '—';
-    }
-
-    // Últimos 5 jogos com resultado
-    const hoje = new Date();
-    const comResultado = jogos.filter(j => {
-      if (!j['resultado'] || j['resultado'] === '') return false;
-      // Formato: DD/MM/YY HH:MM
-      const dataStr = (j['data'] || '').trim();
-      const partes = dataStr.split(' ')[0].split('/');
-      if (partes.length === 3) {
-        const dia = parseInt(partes[0]);
-        const mes = parseInt(partes[1]) - 1;
-        const ano = parseInt(partes[2]) + 2000;
-        const dataJogo = new Date(ano, mes, dia);
-        if (dataJogo > hoje) return false;
-      }
-      return true;
-    }).reverse().slice(0, 5);
-    const container = document.getElementById('results');
-    if (comResultado.length) {
-      container.innerHTML = '';
-      comResultado.forEach(j => {
-        const res = j['resultado'].toLowerCase();
-        const pm  = j['placar mandimba'] || '0';
-        const pv  = j['placar visitante'] || '0';
-        const adv = j['adversario'] || '—';
-        const data = j['data'] || '—';
-        const camp = j['campeonato'] || '';
-        let cls = 'draw', label = 'Empate';
-        if (res.includes('vit')) { cls = 'win';  label = 'Vitória'; }
-        if (res.includes('der')) { cls = 'loss'; label = 'Derrota'; }
-        container.innerHTML += `
-          <div class="result-row">
-            <div class="r-date-comp">
-              <span class="r-date">${data}</span>
-              <span class="r-comp">${camp}</span>
-            </div>
-            <span class="r-team">Mandimba</span>
-            <span class="r-score ${cls}">${pm} — ${pv}</span>
-            <span class="r-team away">${adv}</span>
-            <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
-          </div>`;
-      });
-    }
-
-    // CLASSIFICAÇÃO
-    const rClass = await fetch(CSV_CLASS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
-    const textClass = await rClass.text();
-    const rowsClass = parseCSV(textClass);
-    const classif = toObjects(rowsClass, 1);
-    const tbody = document.querySelector('table.st tbody');
-    if (tbody && classif.length) {
-      tbody.innerHTML = '';
-      classif.forEach((r, i) => {
-        const time  = r['time'] || '—';
-        const pts   = r['pontos'] || '0';
-        const j2    = r['jogos'] || '0';
-        const v     = r['vitorias'] || '0';
-        const e     = r['empates'] || '0';
-        const d     = r['derrotas'] || '0';
-        const gp    = r['gols pro'] || r['gols pro'] || '0';
-        const gc    = r['gols contra'] || '0';
-        const sg    = r['saldo de gols'] || '0';
-        const isMe  = time.toLowerCase().includes('mandimba');
-        tbody.innerHTML += `
-          <tr class="${isMe ? 'me' : ''}">
-            <td>${i+1}</td><td>${time}</td>
-            <td>${j2}</td><td>${v}</td><td>${e}</td><td>${d}</td>
-            <td>${gp}</td><td>${gc}</td><td>${sg}</td>
-            <td>${pts}</td>
-          </tr>`;
-      });
-    }
-  } catch(e) {
-    console.error('Erro ao carregar dados:', e);
-  }
-}
-
-
-function forceRefresh() {
-  const btn = document.getElementById('btn-refresh');
-  btn.classList.add('loading');
-  btn.textContent = '↻ Atualizando...';
-  // Limpa o cache e re-inicializa
-  setTimeout(() => {
-    init().then(() => {
-      btn.classList.remove('loading');
-      btn.innerHTML = '↻ Atualizar';
-      btn.style.background = '#1a7a1a';
-      btn.textContent = '✓ Atualizado!';
-      setTimeout(() => {
-        btn.style.background = '';
-        btn.innerHTML = '↻ Atualizar';
-      }, 2000);
-    });
-  }, 100);
-}
-
-init();
-</script>
 
 <style>
 #btn-refresh {
@@ -707,5 +552,142 @@ init();
 <button id="btn-refresh" onclick="forceRefresh()" title="Atualizar dados do Sheets">
   ↻ Atualizar
 </button>
+
+<script>
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
+const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=627501198&single=true&output=csv';
+
+function parseCSV(text) {
+  return text.trim().split('\n').map(row => {
+    const cols = []; let cur = '', inQ = false;
+    for (let c of row) {
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+function toObjects(rows, headerIdx) {
+  const headers = rows[headerIdx].map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
+  return rows.slice(headerIdx + 1)
+    .filter(r => r[0] && r[0].trim() !== '' && r[0].trim() !== 'TOTAL')
+    .map(r => { const obj = {}; headers.forEach((h,i) => obj[h] = (r[i]||'').trim()); return obj; });
+}
+
+function parseData(str) {
+  // Formato: DD/MM/YY HH:MM
+  const partes = str.trim().split(' ')[0].split('/');
+  if (partes.length !== 3) return null;
+  const dia = parseInt(partes[0]);
+  const mes = parseInt(partes[1]) - 1;
+  const ano = parseInt(partes[2]) + 2000;
+  return new Date(ano, mes, dia);
+}
+
+function forceRefresh() {
+  const btn = document.getElementById('btn-refresh');
+  if (btn) { btn.textContent = '↻ Atualizando...'; btn.disabled = true; }
+  init().then(() => {
+    if (btn) {
+      btn.textContent = '✓ Atualizado!';
+      setTimeout(() => { btn.textContent = '↻ Atualizar'; btn.disabled = false; }, 2000);
+    }
+  });
+}
+
+async function init() {
+  try {
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    // JOGOS
+    const rJogos = await fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store'});
+    const jogos = toObjects(parseCSV(await rJogos.text()), 4);
+
+    // Próximo jogo = data >= hoje
+    const proximo = jogos.find(j => {
+      const d = parseData(j['data'] || '');
+      return d && d >= hoje;
+    });
+
+    if (proximo) {
+      document.getElementById('opp-name').textContent = proximo['adversario'] || 'A definir';
+      document.getElementById('opp-badge').textContent = (proximo['adversario'] || 'A').slice(0,3).toUpperCase();
+      document.getElementById('m-date').textContent = proximo['data'] || '—';
+      document.getElementById('m-time').textContent = '—';
+      document.getElementById('m-local').textContent = proximo['campeonato'] || '—';
+    }
+
+    // Últimos 5 jogos = com resultado E data < hoje
+    const ultimos = jogos.filter(j => {
+      if (!j['resultado'] || j['resultado'] === '') return false;
+      const d = parseData(j['data'] || '');
+      return d && d < hoje;
+    }).reverse().slice(0, 5);
+
+    const container = document.getElementById('results');
+    if (container && ultimos.length) {
+      container.innerHTML = '';
+      ultimos.forEach(j => {
+        const res = j['resultado'].toLowerCase();
+        const pm  = j['placar mandimba'] || '0';
+        const pv  = j['placar visitante'] || '0';
+        const adv = j['adversario'] || '—';
+        const data = j['data'] || '—';
+        const camp = j['campeonato'] || '';
+        let cls = 'draw', label = 'Empate';
+        if (res.includes('vit')) { cls = 'win';  label = 'Vitória'; }
+        if (res.includes('der')) { cls = 'loss'; label = 'Derrota'; }
+        container.innerHTML += `
+          <div class="result-row">
+            <div class="r-date-comp">
+              <span class="r-date">${data}</span>
+              <span class="r-comp">${camp}</span>
+            </div>
+            <span class="r-team">Mandimba</span>
+            <span class="r-score ${cls}">${pm} — ${pv}</span>
+            <span class="r-team away">${adv}</span>
+            <div class="r-badge"><span class="badge ${cls}">${label}</span></div>
+          </div>`;
+      });
+    }
+
+    // CLASSIFICAÇÃO
+    const rClass = await fetch(CSV_CLASS + '&t=' + Date.now(), {cache:'no-store'});
+    const classif = toObjects(parseCSV(await rClass.text()), 1);
+    const tbody = document.querySelector('table.st tbody');
+    if (tbody && classif.length) {
+      tbody.innerHTML = '';
+      classif.forEach((r, i) => {
+        const time = r['time'] || '—';
+        const pts  = r['pontos'] || '0';
+        const j2   = r['jogos'] || '0';
+        const v    = r['vitorias'] || '0';
+        const e    = r['empates'] || '0';
+        const d    = r['derrotas'] || '0';
+        const gp   = r['gols pro'] || '0';
+        const gc   = r['gols contra'] || '0';
+        const sg   = r['saldo de gols'] || '0';
+        const isMe = time.toLowerCase().includes('mandimba');
+        tbody.innerHTML += `
+          <tr class="${isMe ? 'me' : ''}">
+            <td>${i+1}</td><td>${time}</td>
+            <td>${j2}</td><td>${v}</td><td>${e}</td><td>${d}</td>
+            <td>${gp}</td><td>${gc}</td><td>${sg}</td>
+            <td>${pts}</td>
+          </tr>`;
+      });
+    }
+
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e);
+  }
+}
+
+init();
+</script>
 </body>
 </html>
