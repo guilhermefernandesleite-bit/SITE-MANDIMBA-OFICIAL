@@ -54,9 +54,11 @@ body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;m
   flex-direction: column;
   gap: 5px;
   cursor: pointer;
-  padding: 4px;
+  padding: 8px;
   background: none;
   border: none;
+  position: relative;
+  z-index: 300;
 }
 .nav-hamburger span {
   display: block;
@@ -221,9 +223,9 @@ async function doCadastro(e){
 <script>
 function toggleMenu() {
   const menu = document.getElementById('nav-mobile');
-  const btn = document.getElementById('nav-hamburger');
   if (!menu) return;
-  menu.classList.toggle('open');
+  const isOpen = menu.classList.toggle('open');
+  document.getElementById('nav-hamburger').style.opacity = isOpen ? '1' : '0.7';
 }
 </script>
 
