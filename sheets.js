@@ -15,9 +15,9 @@ const SHEET_ID = '1Wv6vyuujDWY3mUIsC04leLcF2aygdwZeZ-uAu0v02jI';
 // URLs de export CSV por nome de aba (gid descoberto dinamicamente ou fixo)
 // Nomes das abas conforme visto na planilha
 const TABS = {
-  jogos:         { name: 'JOGOS',          gid: null },
-  classificacao: { name: 'CLASSIFICAÇÃO',  gid: null },
-  jogadores:     { name: 'JOGADORES',      gid: null },
+  jogos:         { name: 'JOGOS',          gid: '653989414' },
+  classificacao: { name: 'CLASSIFICAÇÃO',  gid: '627501198' },
+  jogadores:     { name: 'JOGADORES',      gid: '479712378' },
 };
 
 // Cache em memória para não re-fetchar na mesma sessão
@@ -122,9 +122,9 @@ async function ensureGIDs() {
   // Fallback: se não achou, usa gids conhecidos / ordem padrão
   // (gid=0 é sempre a primeira aba; as demais são descobertas acima)
   // Com base nas imagens: JOGOS é provavelmente a 1ª aba (gid=0)
-  if (!TABS.jogos.gid)         TABS.jogos.gid         = '0';
-  if (!TABS.classificacao.gid) TABS.classificacao.gid  = '1019568557'; // capturado da URL ao abrir
-  if (!TABS.jogadores.gid)     TABS.jogadores.gid      = '1670225525'; // estimado
+  if (!TABS.jogos.gid)         TABS.jogos.gid         = '653989414';
+  if (!TABS.classificacao.gid) TABS.classificacao.gid  = '627501198'; // capturado da URL ao abrir
+  if (!TABS.jogadores.gid)     TABS.jogadores.gid      = '479712378'; // estimado
 
   _gidsReady = true;
   return _gidsReady;
