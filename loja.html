@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loja · Mandimba FC</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Infant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root{--crimson:#9B1515;--crimson-light:#C01C1C;--black:#080808;--border:rgba(255,255,255,0.07);--border-red:rgba(155,21,21,0.35);--text:#E8E4DC;--text-dim:rgba(232,228,220,0.45);--text-mid:rgba(232,228,220,0.72);}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--black);color:var(--text);font-family:'EB Garamond',Georgia,serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+nav{position:sticky;top:0;z-index:200;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 56px;background:rgba(8,8,8,0.95);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);}
+.nav-logo{display:flex;align-items:center;gap:14px;text-decoration:none;}
+.nav-logo img{height:36px;width:36px;object-fit:contain;}
+.nav-logo-text{font-family:'Cormorant Infant',serif;font-weight:600;font-size:17px;letter-spacing:0.22em;text-transform:uppercase;color:var(--text);}
+.nav-links{display:flex;gap:40px;list-style:none;}
+.nav-links a{font-family:'EB Garamond',serif;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;transition:color .25s;position:relative;}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--crimson);transition:width .3s;}
+.nav-links a:hover,.nav-links a.active{color:var(--text);}
+.nav-links a:hover::after,.nav-links a.active::after{width:100%;}
+.nav-ig{display:flex;align-items:center;gap:8px;font-family:'EB Garamond',serif;font-size:13px;letter-spacing:0.12em;color:var(--text-dim);text-decoration:none;transition:color .25s;}
+.nav-ig:hover{color:var(--text);}
+.nav-ig svg{width:15px;height:15px;}
+
+.coming-soon{
+  min-height: calc(100vh - 64px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:48px;
+}
+.cs-eyebrow{font-size:11px;letter-spacing:0.4em;text-transform:uppercase;color:var(--crimson);margin-bottom:20px;}
+.cs-title{font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(52px,8vw,110px);line-height:0.9;margin-bottom:28px;}
+.cs-title em{font-style:italic;color:var(--crimson-light);}
+.cs-sub{font-style:italic;color:var(--text-dim);font-size:1rem;max-width:400px;line-height:1.7;}
+.cs-line{width:60px;height:1px;background:var(--border-red);margin:32px auto;}
+
+footer{border-top:1px solid var(--border);padding:44px 72px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.f-brand{font-family:'Cormorant Infant',serif;font-weight:600;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-mid);}
+.f-copy{font-size:11.5px;color:var(--text-dim);opacity:.32;letter-spacing:.12em;}
+
+@media(max-width:768px){nav{padding:0 24px;}.nav-links{display:none;}footer{padding:32px 24px;}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="index.html">
+    <img src="LOGO_MANDIMBA_-_OFICIAL.png" alt="Mandimba FC" onerror="this.style.display='none'">
+    <span class="nav-logo-text">Mandimba FC</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Início</a></li>
+    <li><a href="classificacao.html">Classificação</a></li>
+    <li><a href="estatisticas.html">Estatísticas</a></li>
+    <li><a href="apostas.html">Fantasy</a></li>
+    <li><a href="loja.html" class="active">Loja</a></li>
+  </ul>
+  <a class="nav-ig" href="https://instagram.com/mandimbafc" target="_blank">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="2" y="2" width="20" height="20" rx="5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/>
+    </svg>
+    @mandimbafc
+  </a>
+</nav>
+
+<div class="coming-soon">
+  <p class="cs-eyebrow">Mandimba FC · Loja</p>
+  <h1 class="cs-title">Em <em>breve</em></h1>
+  <div class="cs-line"></div>
+  <p class="cs-sub">Uniformes, acessórios e muito mais. A loja oficial do Mandimba FC está chegando.</p>
+</div>
+
+<footer>
+  <span class="f-brand">Mandimba FC · Est. 2019</span>
+  <span class="f-copy">© 2026 Mandimba FC</span>
+</footer>
+</body>
+</html>
