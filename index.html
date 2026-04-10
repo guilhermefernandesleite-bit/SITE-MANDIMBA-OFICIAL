@@ -560,7 +560,19 @@ async function init() {
     const jogos = toObjects(rowsJogos, 4);
 
     // Próximo jogo (sem resultado ou sem placar)
-    const proximo = jogos.find(j => !j['resultado'] || !j['placar mandimba']);
+    const proximo = jogos.find(j => {
+      // Jogo futuro = sem resultado OU data futura
+      const dataStr = (j['data'] || '').trim();
+      const partes = dataStr.split(' ')[0].split('/');
+      if (partes.length === 3) {
+        const dia = parseInt(partes[0]);
+        const mes = parseInt(partes[1]) - 1;
+        const ano = parseInt(partes[2]) + 2000;
+        const dataJogo = new Date(ano, mes, dia);
+        if (dataJogo >= hoje) return true;
+      }
+      return false;
+    });
     if (proximo) {
       document.getElementById('opp-name').textContent = proximo['adversario'] || 'A definir';
       document.getElementById('opp-badge').textContent = (proximo['adversario'] || 'A').slice(0,3).toUpperCase();
@@ -573,10 +585,14 @@ async function init() {
     const hoje = new Date();
     const comResultado = jogos.filter(j => {
       if (!j['resultado'] || j['resultado'] === '') return false;
-      // Verifica se a data do jogo já passou
-      const partes = (j['data'] || '').split('/');
+      // Formato: DD/MM/YY HH:MM
+      const dataStr = (j['data'] || '').trim();
+      const partes = dataStr.split(' ')[0].split('/');
       if (partes.length === 3) {
-        const dataJogo = new Date(partes[2], partes[0]-1, partes[1]);
+        const dia = parseInt(partes[0]);
+        const mes = parseInt(partes[1]) - 1;
+        const ano = parseInt(partes[2]) + 2000;
+        const dataJogo = new Date(ano, mes, dia);
         if (dataJogo > hoje) return false;
       }
       return true;
