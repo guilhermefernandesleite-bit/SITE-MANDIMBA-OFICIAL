@@ -479,7 +479,7 @@ footer {
         <th>#</th><th>Clube</th>
         <th>J</th><th>V</th><th>E</th><th>D</th>
         <th>GP</th><th>GC</th><th>SG</th>
-        <th>Forma</th><th>Pts</th>
+        <th>Pts</th>
       </tr>
     </thead>
     <tbody>
@@ -567,7 +567,7 @@ footer {
       const res   = (j['resultado'] || '').toLowerCase();
       const pm    = j['placar mandimba']   || j['placar_mandimba']   || '0';
       const pv    = j['placar visitante']  || j['placar_visitante']  || '0';
-      const adv   = j['adversario']        || j['adversário']        || '—';
+      const adv   = j['adversario'] || j['adversário'] || j['adversÃ¡rio'] || '—';
       const data  = j['data']              || '—';
       const camp  = j['campeonato']        || '';
 
@@ -609,11 +609,7 @@ footer {
       const isMe    = time.toLowerCase().includes('mandimba');
 
       // Forma (últimas 5: calculada dos jogos se disponível, senão pontos)
-      const pips = `<div class="pips">
-        <span class="pip w"></span><span class="pip w"></span>
-        <span class="pip d"></span><span class="pip w"></span>
-        <span class="pip l"></span>
-      </div>`;
+      const pips = "";
 
       tbody.innerHTML += `
         <tr class="${isMe ? 'me' : ''}">
@@ -621,7 +617,7 @@ footer {
           <td>${time}</td>
           <td>${jogos}</td><td>${vit}</td><td>${emp}</td><td>${der}</td>
           <td>${gp}</td><td>${gc}</td><td>${sg}</td>
-          <td>${pips}</td>
+          
           <td>${pts}</td>
         </tr>`;
     });
