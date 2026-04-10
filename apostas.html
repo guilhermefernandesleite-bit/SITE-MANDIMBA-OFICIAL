@@ -1007,7 +1007,8 @@ async function init() {
   renderNextMatch(proximo);
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
-    renderPlayers(jogadores);
+    const convocados = proximo ? (proximo['convocados'] || '') : '';
+    renderPlayers(jogadores, convocados);
     // Atualiza nome no slip
     const nd = document.getElementById('slip-nome-display');
     if(nd && _profile) nd.textContent = _profile.apelido || _profile.nome;
@@ -1017,7 +1018,7 @@ async function init() {
   } catch(e) {
     console.error('Erro:', e);
     renderNextMatch(null);
-    renderPlayers([]);
+    renderPlayers([], '');
     renderRanking();
     renderHistorico();
     renderMyStats();
@@ -1156,14 +1157,28 @@ function calcularOdd(jogador, tipo) {
   return 2.0;
 }
 
-function renderPlayers(jogadores) {
-  const sorted = [...jogadores].sort((a,b)=>Number(b['gols']||0)-Number(a['gols']||0));
+function renderPlayers(jogadores, convocados) {
+  // Filtra só convocados se lista existir
+  const listaConvocados = convocados
+    ? convocados.split(',').map(n => n.trim().toLowerCase()).filter(Boolean)
+    : null;
+
+  let jogadoresFiltrados = jogadores;
+  if (listaConvocados && listaConvocados.length > 0) {
+    jogadoresFiltrados = jogadores.filter(p =>
+      listaConvocados.includes((p['nome']||'').toLowerCase().trim())
+    );
+    // fallback: se nenhum bateu, usa todos
+    if (jogadoresFiltrados.length === 0) jogadoresFiltrados = jogadores;
+  }
+
+  const sorted = [...jogadoresFiltrados].sort((a,b)=>Number(b['gols']||0)-Number(a['gols']||0));
   const pg = document.getElementById('opts-primeiro-gol');
   const mg = document.getElementById('opts-marca');
   if(!pg||!mg) return;
   // Só recria se conseguiu dados do Sheets
   if(sorted.length > 0) { pg.innerHTML=''; mg.innerHTML=''; }
-  sorted.slice(0,8).forEach(p => {
+  sorted.forEach(p => {
     const nome    = p['nome'] || '—';
     const gols    = p['gols'] || '0';
     const jogos   = p['partidas'] || '0';
