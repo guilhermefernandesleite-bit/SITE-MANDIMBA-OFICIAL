@@ -94,10 +94,31 @@ footer{border-top:1px solid var(--border);padding:40px 72px;display:grid;grid-te
 .f-copy{font-size:11px;color:var(--text-dim);opacity:.3;letter-spacing:.12em;}
 
 @media(max-width:768px){
-  nav{padding:0 20px;}.nav-links{display:none;}
-  .page-hero{padding:100px 24px 40px;}
-  .perfil-wrap{grid-template-columns:1fr;padding:32px 24px;gap:32px;}
-  footer{grid-template-columns:1fr;text-align:center;padding:32px 24px;}.f-right{justify-content:center;}
+  nav{padding:0 20px;} .nav-links{display:none;}
+
+  /* Hero */
+  .page-hero{padding:88px 20px 32px;}
+  .page-title{font-size:clamp(40px,12vw,60px);}
+  .page-sub{font-size:14px;}
+
+  /* Perfil grid */
+  .perfil-wrap{grid-template-columns:1fr;padding:28px 20px;gap:28px;}
+
+  /* Saldo card */
+  .saldo-card{padding:28px 24px;}
+  .saldo-valor{font-size:44px;}
+
+  /* Apostas */
+  .section-title{font-size:26px;}
+  .aposta-card{padding:16px 16px;grid-template-columns:1fr auto;gap:8px;}
+  .aposta-sel{font-size:15px;}
+  .aposta-jogo{font-size:10px;}
+  .tabs{flex-wrap:wrap;gap:0;}
+  .tab-btn{font-size:12px;padding:8px 14px 8px 0;margin-right:12px;}
+
+  /* Footer */
+  footer{grid-template-columns:1fr;text-align:center;padding:32px 20px;}
+  .f-right{justify-content:center;}
 }
 
 
