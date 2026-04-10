@@ -90,7 +90,7 @@ body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;m
 </div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-const sb = createClient('','');
+const sb = createClient('https://psohvzcwxxiplstngzty.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2h2emN3eHhpcGxzdG5nenR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTE1NjMsImV4cCI6MjA5MTMyNzU2M30.5uYQWrFeVA1ffuTt6SNKVnPS-NoVkIVplB4ymw0VVOQ');
 window._sb = sb;
 const {data:{session}} = await sb.auth.getSession();
 if(session) window.location.href='index.html';
