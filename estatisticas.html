@@ -139,6 +139,57 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:grid;grid-te
   display: block; margin-top: 4px;
 }
 
+
+/* ── MENU HAMBURGUER MOBILE ── */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px;
+  background: none;
+  border: none;
+}
+.nav-hamburger span {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--text);
+  transition: all .3s;
+}
+.nav-mobile {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: rgba(8,8,8,0.98);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  z-index: 199;
+  padding: 24px 24px;
+  flex-direction: column;
+  gap: 0;
+}
+.nav-mobile.open { display: flex; }
+.nav-mobile a {
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  transition: color .25s;
+}
+.nav-mobile a:last-child { border-bottom: none; }
+.nav-mobile a:hover, .nav-mobile a.active { color: var(--text); }
+
+@media(max-width:960px){
+  .nav-hamburger { display: flex; }
+}
+
 </style>
 </head>
 <body>
@@ -164,6 +215,10 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:grid;grid-te
     </svg>
     @mandimbafc
   </a>
+  <!-- MENU MOBILE -->
+  <button class="nav-hamburger" onclick="toggleMenu()" id="nav-hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
 <div class="page-header">

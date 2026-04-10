@@ -47,6 +47,57 @@ body{background:var(--black);color:var(--text);font-family:'EB Garamond',serif;m
 .sp{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:768px){body{grid-template-columns:1fr;}.left{display:none;}.right{padding:40px 28px;max-width:100%;}}
+
+/* ── MENU HAMBURGUER MOBILE ── */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px;
+  background: none;
+  border: none;
+}
+.nav-hamburger span {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--text);
+  transition: all .3s;
+}
+.nav-mobile {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: rgba(8,8,8,0.98);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  z-index: 199;
+  padding: 24px 24px;
+  flex-direction: column;
+  gap: 0;
+}
+.nav-mobile.open { display: flex; }
+.nav-mobile a {
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  transition: color .25s;
+}
+.nav-mobile a:last-child { border-bottom: none; }
+.nav-mobile a:hover, .nav-mobile a.active { color: var(--text); }
+
+@media(max-width:960px){
+  .nav-hamburger { display: flex; }
+}
+
 </style>
 </head>
 <body>
@@ -166,5 +217,15 @@ async function doCadastro(e){
   setTimeout(()=>window.location.href=next2,1500);
 }
 </script>
+
+<script>
+function toggleMenu() {
+  const menu = document.getElementById('nav-mobile');
+  const btn = document.getElementById('nav-hamburger');
+  if (!menu) return;
+  menu.classList.toggle('open');
+}
+</script>
+
 </body>
 </html>
