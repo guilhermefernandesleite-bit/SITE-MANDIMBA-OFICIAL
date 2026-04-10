@@ -735,9 +735,11 @@ footer {
 
 </div><!-- /apostas-main -->
 
+
+
 <!-- RANKING -->
 <section class="ranking-section">
-  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:0">
+  <div style="margin-bottom:0">
     <div>
       <div class="eyebrow"><span class="eyebrow-line"></span><span class="eyebrow-text">Placar geral</span></div>
       <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:48px;line-height:1">Ranking <em style="font-style:italic;color:var(--crimson-light)">Fantasy</em></h2>
@@ -745,7 +747,7 @@ footer {
   </div>
   <div class="ranking-grid" id="ranking-grid">
     <div style="grid-column:1/-1;padding:40px 0;text-align:center;color:var(--text-dim);font-style:italic;font-size:15px;">
-      Os palpites confirmados aparecerão aqui.
+      Carregando ranking...
     </div>
   </div>
 </section>
@@ -965,23 +967,27 @@ function fecharModal() {
 }
 
 // ── RANKING ──
-function renderRanking() {
-  const ranking = JSON.parse(localStorage.getItem("mandimba_ranking") || "[]");
+async function renderRanking() {
   const grid = document.getElementById("ranking-grid");
+  if (!grid) return;
 
-  if (ranking.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1;padding:40px 0;text-align:center;color:var(--text-dim);font-style:italic;font-size:15px;">Os palpites confirmados aparecerão aqui.</div>`;
+  const { data: profiles } = await _sb
+    .from('profiles')
+    .select('apelido, nome, creditos')
+    .order('creditos', { ascending: false })
+    .limit(10);
+
+  if (!profiles || profiles.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:40px 0;text-align:center;color:var(--text-dim);font-style:italic;font-size:15px;">Nenhum membro ainda.</div>`;
     return;
   }
 
-  const sorted = [...ranking].sort((a,b) => b.acertos - a.acertos || parseFloat(b.odd) - parseFloat(a.odd));
-
-  grid.innerHTML = sorted.slice(0,9).map((r, i) => `
+  grid.innerHTML = profiles.map((p, i) => `
     <div class="rank-card">
       <span class="rank-pos ${i===0?'gold':''}">${i+1}</span>
       <div class="rank-info">
-        <span class="rank-name">${r.nome}</span>
-        <span class="rank-pts">Odd: <strong>${r.odd}×</strong> · ${r.apostas.length} palpite${r.apostas.length>1?"s":""}</span>
+        <span class="rank-name">${p.apelido || p.nome}</span>
+        <span class="rank-pts">Saldo: <strong>M$${p.creditos || 0}</strong></span>
       </div>
     </div>
   `).join("");
