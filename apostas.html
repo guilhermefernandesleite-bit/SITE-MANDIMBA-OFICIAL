@@ -434,20 +434,20 @@ footer {
   <div class="match-teams-row">
     <span class="mb-team">Mandimba FC</span>
     <span class="mb-vs">versus</span>
-    <span class="mb-team">SC Amélia</span>
+    <span class="mb-team" id="mb-away">SC Amélia</span>
   </div>
   <div class="match-details">
     <div class="md-item">
       <span class="md-label">Competição</span>
-      <span class="md-val">Copa Amstel · Série C</span>
+      <span class="md-val" id="mb-competicao">Copa Amstel · Série C</span>
     </div>
     <div class="md-item">
       <span class="md-label">Data</span>
-      <span class="md-val">Sábado, 12 abr.</span>
+      <span class="md-val" id="mb-data">Sábado, 12 abr.</span>
     </div>
     <div class="md-item">
       <span class="md-label">Horário</span>
-      <span class="md-val">13h30</span>
+      <span class="md-val" id="mb-hora">13h30</span>
     </div>
     <div class="md-item">
       <span class="md-label">Local</span>
@@ -482,7 +482,7 @@ footer {
           <span class="result-odd">3.2×</span>
         </div>
         <div class="result-card" data-cat="resultado" data-sel="SC Amélia vence" data-odd="3.8" onclick="toggleBet(this)">
-          <span class="result-label">SC Amélia</span>
+          <span class="result-label" id="mb-away-result">SC Amélia</span>
           <span class="result-odd">3.8×</span>
         </div>
       </div>
@@ -942,13 +942,46 @@ function renderNextMatch(jogo) {
   const hora  = jogo ? (jogo['_hora_formatada'] || '—') : '—';
   const local = jogo ? (jogo['campeonato'] || '—') : '—';
   const el = id => document.getElementById(id);
-  if(el('rodada-num'))   el('rodada-num').textContent  = '—';
-  if(el('match-local'))  el('match-local').textContent = local;
-  if(el('match-date'))   el('match-date').textContent  = data + (hora !== '—' ? ' · ' + hora : '');
-  if(el('team-home'))    el('team-home').textContent   = 'Mandimba FC';
-  if(el('team-away'))    el('team-away').textContent   = adv;
+
+  // Atualiza match banner
+  if(el('mb-away'))        el('mb-away').textContent        = adv;
+  if(el('mb-competicao'))  el('mb-competicao').textContent  = local;
+  if(el('mb-data'))        el('mb-data').textContent        = data;
+  if(el('mb-hora'))        el('mb-hora').textContent        = hora;
+  if(el('mb-away-result')) el('mb-away-result').textContent = adv;
+
+  // Atualiza data-sel do card do adversário
+  const awayCard = document.querySelector('[data-sel$=" vence"]:last-of-type');
+  if(awayCard) awayCard.dataset.sel = adv + ' vence';
+
+  // Outros IDs antigos
+  if(el('rodada-num'))    el('rodada-num').textContent   = '—';
+  if(el('match-local'))   el('match-local').textContent  = local;
+  if(el('match-date'))    el('match-date').textContent   = data + (hora !== '—' ? ' · ' + hora : '');
+  if(el('team-home'))     el('team-home').textContent    = 'Mandimba FC';
+  if(el('team-away'))     el('team-away').textContent    = adv;
   if(el('opt-home-name')) el('opt-home-name').textContent = 'Mandimba FC';
   if(el('opt-away-name')) el('opt-away-name').textContent = adv;
+
+  // Countdown
+  if (jogo && jogo['_hora_formatada'] && jogo['_hora_formatada'] !== '—') {
+    const partes = (jogo['_data_formatada']||'').split('/');
+    if (partes.length === 3) {
+      const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+      const hm = (jogo['_hora_formatada']||'').replace('h',':').split(':');
+      d.setHours(parseInt(hm[0])||0, parseInt(hm[1])||0, 0, 0);
+      function tick() {
+        const diff = d - new Date();
+        if (diff <= 0) return;
+        const pad = n => String(Math.floor(n)).padStart(2,'0');
+        if(el('cd-d')) el('cd-d').textContent = pad(diff/86400000);
+        if(el('cd-h')) el('cd-h').textContent = pad((diff%86400000)/3600000);
+        if(el('cd-m')) el('cd-m').textContent = pad((diff%3600000)/60000);
+        if(el('cd-s')) el('cd-s').textContent = pad((diff%60000)/1000);
+      }
+      tick(); setInterval(tick, 1000);
+    }
+  }
   const goalsWrap = document.getElementById('opts-gols');
   if(goalsWrap) {
     goalsWrap.innerHTML = '';
