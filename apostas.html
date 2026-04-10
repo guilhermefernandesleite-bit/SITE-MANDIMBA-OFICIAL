@@ -1004,6 +1004,23 @@ async function init() {
   }).pop();
   if (ultimoJogo) liquidarApostas(ultimoJogo);
 
+  // Verifica se apostas estão travadas (1 min antes do jogo)
+  if (proximo) {
+    const partes = (proximo['_data_formatada']||'').split('/');
+    if (partes.length === 3) {
+      const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+      const hm = (proximo['_hora_formatada']||'').replace('h',':').split(':');
+      d.setHours(parseInt(hm[0])||0, parseInt(hm[1])||0, 0, 0);
+      const msRestantes = d - new Date();
+      if (msRestantes <= 60000) {
+        travarApostas();
+      } else {
+        // Agenda travamento para 1 min antes
+        setTimeout(travarApostas, msRestantes - 60000);
+      }
+    }
+  }
+
   renderNextMatch(proximo);
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
@@ -1123,6 +1140,26 @@ async function liquidarApostas(jogo) {
     }
   }
   console.log('✅ Liquidação concluída para', jogoDesc);
+}
+
+// ── TRAVAMENTO DE APOSTAS ──
+function travarApostas() {
+  // Desabilita todos os cards
+  document.querySelectorAll('.player-card, .result-card, .gol-card').forEach(el => {
+    el.style.pointerEvents = 'none';
+    el.style.opacity = '0.35';
+  });
+
+  // Desabilita botão de confirmar
+  const btn = document.getElementById('btn-confirmar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Apostas encerradas'; }
+
+  // Mostra aviso no banner
+  const aviso = document.createElement('div');
+  aviso.style.cssText = 'grid-column:1/-1;text-align:center;padding:10px 20px;background:rgba(155,21,21,0.15);border:1px solid rgba(155,21,21,0.3);font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#C01C1C;';
+  aviso.textContent = '⏱ Apostas encerradas — jogo prestes a começar';
+  const banner = document.getElementById('match-banner');
+  if (banner) banner.appendChild(aviso);
 }
 
 // Peso por posição — futebol de 7
