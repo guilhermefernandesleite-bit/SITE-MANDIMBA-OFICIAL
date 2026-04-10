@@ -571,33 +571,8 @@ footer {
 
 
 
-<style>
-#btn-refresh {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 999;
-  background: var(--crimson);
-  color: #fff;
-  border: none;
-  padding: 10px 18px;
-  font-family: 'EB Garamond', serif;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background .2s, opacity .2s;
-  opacity: 0.7;
-}
-#btn-refresh:hover { background: #b31a1a; opacity: 1; }
-#btn-refresh.loading { opacity: 0.5; pointer-events: none; }
-</style>
-<button id="btn-refresh" onclick="forceRefresh()" title="Atualizar dados do Sheets">
-  ↻ Atualizar
-</button>
+
+
 
 <script>
 const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
@@ -633,16 +608,7 @@ function parseData(str) {
   return new Date(ano, mes, dia);
 }
 
-function forceRefresh() {
-  const btn = document.getElementById('btn-refresh');
-  if (btn) { btn.textContent = '↻ Atualizando...'; btn.disabled = true; }
-  init().then(() => {
-    if (btn) {
-      btn.textContent = '✓ Atualizado!';
-      setTimeout(() => { btn.textContent = '↻ Atualizar'; btn.disabled = false; }, 2000);
-    }
-  });
-}
+
 
 async function init() {
   try {
