@@ -185,84 +185,102 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:grid;grid-te
   </div>
 </footer>
 
-<script src="sheets.js"></script>
+
+
+
 <script>
+const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
+const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv';
+
 let _jogadores = [];
-let _jogos     = [];
+let _jogos = [];
+
+function parseCSV(text) {
+  return text.trim().split('\n').map(row => {
+    const cols = []; let cur = '', inQ = false;
+    for (let c of row) {
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+function toObjects(rows, headerIdx) {
+  const headers = rows[headerIdx].map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
+  return rows.slice(headerIdx + 1)
+    .filter(r => r[0] && r[0].trim() !== '' && r[0].trim() !== 'TOTAL')
+    .map(r => { const obj = {}; headers.forEach((h,i) => obj[h] = (r[i]||'').trim()); return obj; });
+}
 
 function n(v) { return Number(v) || 0; }
-function key(j, ...ks) { for(const k of ks) if(j[k] !== undefined) return j[k]; return ''; }
 
 async function init() {
-  const [jogadores, jogos] = await Promise.all([
-    MandimbaDB.jogadores(),
-    MandimbaDB.jogos(),
-  ]);
-  _jogadores = jogadores;
-  _jogos     = jogos.filter(j => (j['resultado']||'') !== '');
+  try {
+    const [rJogs, rJogos] = await Promise.all([
+      fetch(CSV_JOGS  + '&t=' + Date.now(), {cache:'no-store'}),
+      fetch(CSV_JOGOS + '&t=' + Date.now(), {cache:'no-store'})
+    ]);
 
-  renderStatCards();
-  renderArtilharia();
-  renderPlayersTable(_jogadores, 'gols');
+    _jogadores = toObjects(parseCSV(await rJogs.text()), 4);
+    _jogos     = toObjects(parseCSV(await rJogos.text()), 4)
+                  .filter(j => j['resultado'] && j['resultado'] !== '');
+
+    renderStatCards();
+    renderArtilharia();
+    renderPlayersTable(_jogadores, 'gols');
+  } catch(e) {
+    console.error('Erro:', e);
+  }
 }
 
 function renderStatCards() {
-  const totalGols    = _jogadores.reduce((s, j) => s + n(key(j,'gols')), 0);
-  const totalAss     = _jogadores.reduce((s, j) => s + n(key(j,'assistencias','assistências')), 0);
-  const totalPart    = _jogadores.reduce((s, j) => s + n(key(j,'participacoes','participações')), 0);
-  const totalJogos   = _jogos.length;
-  const vitorias     = _jogos.filter(j => (j['resultado']||'').toLowerCase().includes('vit')).length;
-  const mediaGols    = totalJogos ? (totalGols / totalJogos).toFixed(1) : '—';
-  const artilheiro   = [..._jogadores].sort((a,b) => n(key(b,'gols')) - n(key(a,'gols')))[0];
+  const totalGols  = _jogadores.reduce((s,j) => s + n(j['gols']), 0);
+  const totalAss   = _jogadores.reduce((s,j) => s + n(j['assistencias']), 0);
+  const totalJogos = _jogos.length;
+  const vitorias   = _jogos.filter(j => j['resultado'].toLowerCase().includes('vit')).length;
+  const mediaGols  = totalJogos ? (totalGols/totalJogos).toFixed(1) : '—';
+  const art        = [..._jogadores].sort((a,b) => n(b['gols'])-n(a['gols']))[0];
 
   document.getElementById('stat-cards').innerHTML = `
     <div class="stat-card"><span class="num">${totalGols}</span><span class="lbl">Gols marcados</span></div>
     <div class="stat-card"><span class="num">${totalAss}</span><span class="lbl">Assistências</span></div>
     <div class="stat-card"><span class="num">${totalJogos}</span><span class="lbl">Jogos disputados</span></div>
     <div class="stat-card"><span class="num">${vitorias}</span><span class="lbl">Vitórias</span></div>
-    <div class="stat-card"><span class="num">${mediaGols}</span><span class="lbl">Média de gols/jogo</span></div>
-    <div class="stat-card"><span class="num">${artilheiro ? key(artilheiro,'nome') : '—'}</span><span class="lbl">Artilheiro</span></div>
-  `;
+    <div class="stat-card"><span class="num">${mediaGols}</span><span class="lbl">Média gols/jogo</span></div>
+    <div class="stat-card"><span class="num">${art ? art['nome'] : '—'}</span><span class="lbl">Artilheiro</span></div>`;
 }
 
 function renderArtilharia() {
-  const sorted = [..._jogadores]
-    .sort((a, b) => n(key(b,'gols')) - n(key(a,'gols')))
-    .slice(0, 8);
-  const maxGols = n(key(sorted[0]||{},'gols')) || 1;
-
-  document.getElementById('artilharia-wrap').innerHTML = sorted.map((j, i) => {
-    const nome = key(j,'nome') || '—';
-    const pos  = key(j,'posicao','posição') || '—';
-    const gols = n(key(j,'gols'));
-    const ast  = n(key(j,'assistencias','assistências'));
-    const part = n(key(j,'participacoes','participações'));
-    const pct  = Math.round((gols / maxGols) * 100);
-    return `
-      <div class="art-row">
-        <span class="art-pos">${i+1}</span>
-        <div>
-          <div class="art-nome">${nome}</div>
-          <div class="art-pos-tag">${pos}</div>
-          <div class="bar-wrap">
-            <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-          </div>
-        </div>
-        <span class="art-val gols" title="Gols">${gols}</span>
-        <span class="art-val ast" title="Assistências">${ast}</span>
-        <span class="art-val part" title="Participações">${part}</span>
-      </div>`;
+  const sorted = [..._jogadores].sort((a,b) => n(b['gols'])-n(a['gols'])).slice(0,8);
+  const maxGols = n(sorted[0]?.['gols']) || 1;
+  document.getElementById('artilharia-wrap').innerHTML = sorted.map((j,i) => {
+    const nome = j['nome']||'—';
+    const pos  = j['posicao']||'—';
+    const gols = n(j['gols']);
+    const ast  = n(j['assistencias']);
+    const part = n(j['participacoes']);
+    const pct  = Math.round((gols/maxGols)*100);
+    return `<div class="art-row">
+      <span class="art-pos">${i+1}</span>
+      <div>
+        <div class="art-nome">${nome}</div>
+        <div class="art-pos-tag">${pos}</div>
+        <div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>
+      </div>
+      <span class="art-val gols" title="Gols">${gols}</span>
+      <span class="art-val ast" title="Assistências">${ast}</span>
+      <span class="art-val part" title="Participações">${part}</span>
+    </div>`;
   }).join('');
 }
 
 function sortBy(campo, btn) {
   document.querySelectorAll('.sort-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const sorted = [..._jogadores].sort((a, b) => {
-    const map = { gols:'gols', assistencias:'assistencias', participacoes:'participacoes', partidas:'partidas' };
-    const k = map[campo] || campo;
-    return n(key(b,k)) - n(key(a,k));
-  });
+  const sorted = [..._jogadores].sort((a,b) => n(b[campo])-n(a[campo]));
   renderPlayersTable(sorted, campo);
 }
 
@@ -272,36 +290,33 @@ function renderPlayersTable(jogadores, sortCampo) {
     return;
   }
   const rows = jogadores.map(j => {
-    const nome  = key(j,'nome') || '—';
-    const pos   = key(j,'posicao','posição') || '—';
-    const part  = key(j,'partidas') || '0';
-    const gols  = key(j,'gols') || '0';
-    const ast   = key(j,'assistencias','assistências') || '0';
-    const partic = key(j,'participacoes','participações') || '0';
-    const ca    = key(j,'cartoes amarelos','cartões amarelos','cartoes_amarelos') || '0';
-    const cv    = key(j,'cartoes vermelhos','cartões vermelhos','cartoes_vermelhos') || '0';
-    return `
-      <tr>
-        <td>${nome}</td>
-        <td class="pos-tag">${pos}</td>
-        <td>${part}</td>
-        <td style="color:var(--crimson);font-weight:600">${gols}</td>
-        <td style="color:var(--gold)">${ast}</td>
-        <td>${partic}</td>
-        <td style="color:#C9A84C;opacity:0.7">${ca}</td>
-        <td style="color:var(--crimson-light)">${cv}</td>
-      </tr>`;
+    const nome  = j['nome']||'—';
+    const pos   = j['posicao']||'—';
+    const part  = j['partidas']||'0';
+    const gols  = j['gols']||'0';
+    const ast   = j['assistencias']||'0';
+    const partic = j['participacoes']||'0';
+    const ca    = j['cartoes amarelos']||j['cartoes_amarelos']||'0';
+    const cv    = j['cartoes vermelhos']||j['cartoes_vermelhos']||'0';
+    return `<tr>
+      <td>${nome}</td>
+      <td class="pos-tag">${pos}</td>
+      <td>${part}</td>
+      <td style="color:var(--crimson);font-weight:600">${gols}</td>
+      <td style="color:var(--gold)">${ast}</td>
+      <td>${partic}</td>
+      <td style="color:#C9A84C;opacity:0.7">${ca}</td>
+      <td style="color:var(--crimson-light)">${cv}</td>
+    </tr>`;
   }).join('');
 
   document.getElementById('players-table-wrap').innerHTML = `
     <table class="pt">
-      <thead>
-        <tr>
-          <th>Jogador</th><th>Pos.</th>
-          <th>Partidas</th><th>Gols</th><th>Assist.</th><th>Partic.</th>
-          <th>CA</th><th>CV</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Jogador</th><th>Pos.</th>
+        <th>Partidas</th><th>Gols</th><th>Assist.</th><th>Partic.</th>
+        <th>CA</th><th>CV</th>
+      </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
