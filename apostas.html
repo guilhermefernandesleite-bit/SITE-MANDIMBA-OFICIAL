@@ -454,12 +454,7 @@ footer {
       <span class="md-val">Playball Pompeia</span>
     </div>
   </div>
-  <div class="match-cd">
-    <div class="cd-cell"><span class="cd-n" id="cd-d">--</span><span class="cd-l">Dias</span></div>
-    <div class="cd-cell"><span class="cd-n" id="cd-h">--</span><span class="cd-l">Horas</span></div>
-    <div class="cd-cell"><span class="cd-n" id="cd-m">--</span><span class="cd-l">Min</span></div>
-    <div class="cd-cell"><span class="cd-n" id="cd-s">--</span><span class="cd-l">Seg</span></div>
-  </div>
+
 </div>
 
 <!-- MAIN -->
@@ -716,18 +711,7 @@ footer {
 </footer>
 
 <script>
-// ── COUNTDOWN ──
-const MATCH_DT = new Date("2026-04-11T13:30:00");
-function tick() {
-  const diff = MATCH_DT - new Date();
-  if (diff <= 0) { ["cd-d","cd-h","cd-m","cd-s"].forEach(id => document.getElementById(id).textContent = "00"); return; }
-  const pad = n => String(Math.floor(n)).padStart(2,"0");
-  document.getElementById("cd-d").textContent = pad(diff/86400000);
-  document.getElementById("cd-h").textContent = pad((diff%86400000)/3600000);
-  document.getElementById("cd-m").textContent = pad((diff%3600000)/60000);
-  document.getElementById("cd-s").textContent = pad((diff%60000)/1000);
-}
-tick(); setInterval(tick,1000);
+
 
 // ── BET STATE ──
 // cat → só 1 seleção por categoria (exceto marca_gol que permite múltiplos)
@@ -975,25 +959,7 @@ function renderNextMatch(jogo) {
   if(el('opt-home-name')) el('opt-home-name').textContent = 'Mandimba FC';
   if(el('opt-away-name')) el('opt-away-name').textContent = adv;
 
-  // Countdown
-  if (jogo && jogo['_hora_formatada'] && jogo['_hora_formatada'] !== '—') {
-    const partes = (jogo['_data_formatada']||'').split('/');
-    if (partes.length === 3) {
-      const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
-      const hm = (jogo['_hora_formatada']||'').replace('h',':').split(':');
-      d.setHours(parseInt(hm[0])||0, parseInt(hm[1])||0, 0, 0);
-      function tick() {
-        const diff = d - new Date();
-        if (diff <= 0) return;
-        const pad = n => String(Math.floor(n)).padStart(2,'0');
-        if(el('cd-d')) el('cd-d').textContent = pad(diff/86400000);
-        if(el('cd-h')) el('cd-h').textContent = pad((diff%86400000)/3600000);
-        if(el('cd-m')) el('cd-m').textContent = pad((diff%3600000)/60000);
-        if(el('cd-s')) el('cd-s').textContent = pad((diff%60000)/1000);
-      }
-      tick(); setInterval(tick, 1000);
-    }
-  }
+
   const goalsWrap = document.getElementById('opts-gols');
   if(goalsWrap) {
     goalsWrap.innerHTML = '';
@@ -1016,9 +982,9 @@ const PESO_POSICAO = {
 };
 
 function calcularOdd(jogador, tipo) {
-  const gols    = Number(jogador['GOLS'] || 0);
-  const jogos   = Number(jogador['PARTIDAS'] || 1) || 1;
-  const posicao = (jogador['POSIÇÃO'] || '').toUpperCase().trim();
+  const gols    = Number(jogador['gols'] || 0);
+  const jogos   = Number(jogador['partidas'] || 1) || 1;
+  const posicao = (jogador['posicao'] || '').toUpperCase().trim();
   const peso    = PESO_POSICAO[posicao] || 2.0;
   const taxa    = gols / jogos; // gols por jogo
 
@@ -1039,17 +1005,17 @@ function calcularOdd(jogador, tipo) {
 }
 
 function renderPlayers(jogadores) {
-  const sorted = [...jogadores].sort((a,b)=>Number(b['GOLS']||0)-Number(a['GOLS']||0));
+  const sorted = [...jogadores].sort((a,b)=>Number(b['gols']||0)-Number(a['gols']||0));
   const pg = document.getElementById('opts-primeiro-gol');
   const mg = document.getElementById('opts-marca');
   if(!pg||!mg) return;
   // Só recria se conseguiu dados do Sheets
   if(sorted.length > 0) { pg.innerHTML=''; mg.innerHTML=''; }
   sorted.slice(0,8).forEach(p => {
-    const nome    = p['NOME'] || '—';
-    const gols    = p['GOLS'] || '0';
-    const jogos   = p['PARTIDAS'] || '0';
-    const posicao = p['POSIÇÃO'] || '';
+    const nome    = p['nome'] || '—';
+    const gols    = p['gols'] || '0';
+    const jogos   = p['partidas'] || '0';
+    const posicao = p['posicao'] || '';
     const oddMarca    = calcularOdd(p, 'marca');
     const oddPrimeiro = calcularOdd(p, 'primeiro_gol');
     const statsPG = gols + ' gols · ' + jogos + ' jogos';
