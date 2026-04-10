@@ -487,10 +487,8 @@ footer {
       </div>
     </div>
 
-    <!-- PRIMEIRO GOL -->
-    <div class="bet-section">
-      <h2 class="bet-section-title">Primeiro <em>gol</em></h2>
-      <p class="bet-section-desc">Odds baseadas na taxa de gols por partida de cada jogador.</p>
+    <!-- PRIMEIRO GOL (removido) -->
+    <div class="bet-section" style="display:none">
       <div class="player-grid" id="opts-primeiro-gol">
         <div class="player-card" data-cat="primeiro_gol" data-sel="Thi" data-odd="6.8" onclick="toggleBet(this)">
           <div class="player-info">
@@ -994,6 +992,17 @@ async function init() {
     proximo['_data_formatada'] = partesDT[0] || '—';
     proximo['_hora_formatada'] = partesDT[1] ? partesDT[1] + 'h' : '—';
   }
+  // Liquida apostas do último jogo encerrado
+  const ultimoJogo = jogos.filter(j => {
+    const partes = (j['data']||'').trim().split(' ')[0].split('/');
+    if (partes.length === 3) {
+      const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+      return d < new Date() && j['resultado'];
+    }
+    return false;
+  }).pop();
+  if (ultimoJogo) liquidarApostas(ultimoJogo);
+
   renderNextMatch(proximo);
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
@@ -1052,6 +1061,66 @@ function renderNextMatch(jogo) {
       goalsWrap.appendChild(b);
     }
   }
+}
+
+// ── LIQUIDAÇÃO AUTOMÁTICA ──
+async function liquidarApostas(jogo) {
+  if (!jogo || !jogo['resultado']) return;
+
+  const resultado   = (jogo['resultado'] || '').toLowerCase();
+  const marcadores  = (jogo['marcadores'] || '').split(',').map(m => m.trim().toLowerCase()).filter(Boolean);
+  const golsMandimba = parseInt(jogo['placar mandimba'] || 0);
+  const golsAdv      = parseInt(jogo['placar visitante'] || 0);
+  const totalGols    = golsMandimba + golsAdv;
+  const jogoDesc     = 'Mandimba FC vs ' + (jogo['adversario'] || '');
+
+  // Busca apostas pendentes deste jogo
+  const { data: apostas } = await _sb
+    .from('apostas')
+    .select('*')
+    .eq('jogo_descricao', jogoDesc)
+    .eq('status', 'pendente');
+
+  if (!apostas || apostas.length === 0) return;
+
+  for (const aposta of apostas) {
+    const sel = (aposta.selecao || '').toLowerCase();
+    let ganhou = false;
+
+    if (aposta.mercado === 'Resultado') {
+      if (sel.includes('mandimba') && resultado.includes('vit')) ganhou = true;
+      if (sel === 'empate' && resultado.includes('empate')) ganhou = true;
+      if (!sel.includes('mandimba') && sel !== 'empate' && resultado.includes('der')) ganhou = true;
+    }
+
+    if (aposta.mercado === 'Marca Gol') {
+      const nomeJogador = sel.replace(' marca', '').trim();
+      ganhou = marcadores.includes(nomeJogador);
+    }
+
+    if (aposta.mercado === 'Total de Gols') {
+      if (sel.includes('menos de 4') && totalGols < 4) ganhou = true;
+      if (sel.includes('4 a 5') && totalGols >= 4 && totalGols <= 5) ganhou = true;
+      if (sel.includes('6 a 7') && totalGols >= 6 && totalGols <= 7) ganhou = true;
+      if (sel.includes('8 a 9') && totalGols >= 8 && totalGols <= 9) ganhou = true;
+      if (sel.includes('10') && totalGols >= 10) ganhou = true;
+    }
+
+    const novoStatus = ganhou ? 'ganhou' : 'perdeu';
+    const creditosGanhos = ganhou ? Math.round(aposta.creditos_apostados * aposta.odd || 2) : 0;
+
+    await _sb.from('apostas').update({
+      status: novoStatus,
+      creditos_ganhos: creditosGanhos
+    }).eq('id', aposta.id);
+
+    if (ganhou) {
+      const { data: perfil } = await _sb.from('profiles').select('creditos').eq('id', aposta.user_id).single();
+      const novoSaldo = (perfil?.creditos || 0) + creditosGanhos;
+      await _sb.from('profiles').update({ creditos: novoSaldo }).eq('id', aposta.user_id);
+    }
+  }
+  console.log('✅ Liquidação concluída para', jogoDesc);
 }
 
 // Peso por posição — futebol de 7
