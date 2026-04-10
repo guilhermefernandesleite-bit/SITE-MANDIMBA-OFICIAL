@@ -492,7 +492,7 @@ footer {
     <div class="bet-section">
       <h2 class="bet-section-title">Primeiro <em>gol</em></h2>
       <p class="bet-section-desc">Odds baseadas na taxa de gols por partida de cada jogador.</p>
-      <div class="player-grid">
+      <div class="player-grid" id="opts-primeiro-gol">
         <div class="player-card" data-cat="primeiro_gol" data-sel="Thi" data-odd="6.8" onclick="toggleBet(this)">
           <div class="player-info">
             <span class="player-name">Thi</span>
@@ -556,7 +556,7 @@ footer {
     <div class="bet-section">
       <h2 class="bet-section-title">Marca <em>gol</em></h2>
       <p class="bet-section-desc">Quais jogadores marcarão ao menos um gol na partida?</p>
-      <div class="player-grid">
+      <div class="player-grid" id="opts-marca">
         <div class="player-card" data-cat="marca_gol" data-sel="Arroz marca" data-odd="1.2" onclick="toggleBet(this)">
           <div class="player-info">
             <span class="player-name">Arroz</span>
@@ -1006,17 +1006,74 @@ function renderNextMatch(jogo) {
   }
 }
 
+// Peso por posição — futebol de 7
+const PESO_POSICAO = {
+  'ATACANTE': 1.0,
+  'ALA':      1.3,
+  'MEIA':     1.6,
+  'FIXO':     2.5,
+  'GOLEIRO':  6.0
+};
+
+function calcularOdd(jogador, tipo) {
+  const gols    = Number(jogador['GOLS'] || 0);
+  const jogos   = Number(jogador['PARTIDAS'] || 1) || 1;
+  const posicao = (jogador['POSIÇÃO'] || '').toUpperCase().trim();
+  const peso    = PESO_POSICAO[posicao] || 2.0;
+  const taxa    = gols / jogos; // gols por jogo
+
+  if (tipo === 'marca') {
+    // Probabilidade de marcar ao menos 1 gol
+    // Usa Poisson: P(X>=1) = 1 - e^(-taxa)
+    const prob = taxa > 0 ? (1 - Math.exp(-taxa)) : 0.05;
+    const odd  = (1 / prob) * peso;
+    return Math.max(1.1, Math.round(odd * 10) / 10);
+  }
+
+  if (tipo === 'primeiro_gol') {
+    // Prob de ser o primeiro a marcar: taxa relativa ao grupo * peso
+    return Math.max(1.5, Math.round((1 / (taxa || 0.05)) * peso * 10) / 10);
+  }
+
+  return 2.0;
+}
+
 function renderPlayers(jogadores) {
-  const sorted = [...jogadores].sort((a,b)=>Number(b['gols']||0)-Number(a['gols']||0));
+  const sorted = [...jogadores].sort((a,b)=>Number(b['GOLS']||0)-Number(a['GOLS']||0));
   const pg = document.getElementById('opts-primeiro-gol');
   const mg = document.getElementById('opts-marca');
   if(!pg||!mg) return;
-  pg.innerHTML=''; mg.innerHTML='';
+  // Só recria se conseguiu dados do Sheets
+  if(sorted.length > 0) { pg.innerHTML=''; mg.innerHTML=''; }
   sorted.slice(0,8).forEach(p => {
-    const nome = p['nome']||'—';
-    const gols = p['gols']||'0';
-    pg.appendChild(makePlayerOpt(nome,'primeirogol',30,gols+' gols'));
-    mg.appendChild(makePlayerOpt(nome,'marca',15,gols+' gols'));
+    const nome    = p['NOME'] || '—';
+    const gols    = p['GOLS'] || '0';
+    const jogos   = p['PARTIDAS'] || '0';
+    const posicao = p['POSIÇÃO'] || '';
+    const oddMarca    = calcularOdd(p, 'marca');
+    const oddPrimeiro = calcularOdd(p, 'primeiro_gol');
+    const statsPG = gols + ' gols · ' + jogos + ' jogos';
+    const statsMG = gols + ' gols em ' + jogos + ' jogos';
+
+    // Card Primeiro Gol
+    const cardPG = document.createElement('div');
+    cardPG.className = 'player-card';
+    cardPG.dataset.cat = 'primeiro_gol';
+    cardPG.dataset.sel = nome;
+    cardPG.dataset.odd = oddPrimeiro;
+    cardPG.onclick = function(){ toggleBet(this); };
+    cardPG.innerHTML = `<div class="player-info"><span class="player-name">${nome}</span><span class="player-stats">${statsPG} · ${posicao}</span></div><span class="player-odd">${oddPrimeiro}×</span>`;
+    pg.appendChild(cardPG);
+
+    // Card Marca Gol
+    const cardMG = document.createElement('div');
+    cardMG.className = 'player-card';
+    cardMG.dataset.cat = 'marca_gol';
+    cardMG.dataset.sel = nome + ' marca';
+    cardMG.dataset.odd = oddMarca;
+    cardMG.onclick = function(){ toggleBet(this); };
+    cardMG.innerHTML = `<div class="player-info"><span class="player-name">${nome}</span><span class="player-stats">${statsMG} · ${posicao}</span></div><span class="player-odd">${oddMarca}×</span>`;
+    mg.appendChild(cardMG);
   });
 }
 
