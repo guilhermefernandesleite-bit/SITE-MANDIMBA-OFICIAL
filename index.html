@@ -631,7 +631,55 @@ async function init() {
   }
 }
 
+
+function forceRefresh() {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.add('loading');
+  btn.textContent = '↻ Atualizando...';
+  // Limpa o cache e re-inicializa
+  setTimeout(() => {
+    init().then(() => {
+      btn.classList.remove('loading');
+      btn.innerHTML = '↻ Atualizar';
+      btn.style.background = '#1a7a1a';
+      btn.textContent = '✓ Atualizado!';
+      setTimeout(() => {
+        btn.style.background = '';
+        btn.innerHTML = '↻ Atualizar';
+      }, 2000);
+    });
+  }, 100);
+}
+
 init();
 </script>
+
+<style>
+#btn-refresh {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 999;
+  background: var(--crimson);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  font-family: 'EB Garamond', serif;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background .2s, opacity .2s;
+  opacity: 0.7;
+}
+#btn-refresh:hover { background: #b31a1a; opacity: 1; }
+#btn-refresh.loading { opacity: 0.5; pointer-events: none; }
+</style>
+<button id="btn-refresh" onclick="forceRefresh()" title="Atualizar dados do Sheets">
+  ↻ Atualizar
+</button>
 </body>
 </html>
