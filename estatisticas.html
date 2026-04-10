@@ -225,8 +225,18 @@ async function init() {
     ]);
 
     _jogadores = toObjects(parseCSV(await rJogs.text()), 4);
-    _jogos     = toObjects(parseCSV(await rJogos.text()), 4)
-                  .filter(j => j['resultado'] && j['resultado'] !== '');
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    _jogos = toObjects(parseCSV(await rJogos.text()), 4)
+      .filter(j => {
+        if (!j['resultado'] || j['resultado'] === '') return false;
+        const partes = (j['data']||'').trim().split(' ')[0].split('/');
+        if (partes.length === 3) {
+          const dataJogo = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+          if (dataJogo >= hoje) return false;
+        }
+        return true;
+      });
 
     renderStatCards();
     renderArtilharia();
