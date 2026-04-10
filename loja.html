@@ -37,7 +37,20 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:flex;align-i
 .f-brand{font-family:'Cormorant Infant',serif;font-weight:600;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-mid);}
 .f-copy{font-size:11.5px;color:var(--text-dim);opacity:.32;letter-spacing:.12em;}
 
-@media(max-width:768px){nav{padding:0 24px;}.nav-links{display:none;}footer{padding:32px 24px;}}
+
+/* HAMBURGUER */
+.hbg{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none;z-index:9999;position:relative;}
+.hbg span{display:block;width:22px;height:2px;background:var(--text);transition:all .3s;pointer-events:none;}
+.mob-menu{display:none;position:fixed;top:64px;left:0;right:0;bottom:0;background:rgba(8,8,8,0.98);z-index:9998;padding:32px 28px;flex-direction:column;gap:0;overflow-y:auto;}
+.mob-menu.open{display:flex;}
+.mob-menu a{font-family:'EB Garamond',serif;font-size:18px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;padding:18px 0;border-bottom:1px solid var(--border);}
+.mob-menu a.active,.mob-menu a:hover{color:var(--text);}
+
+@media(max-width:768px){
+  nav{padding:0 20px;} .nav-links{display:none;} .hbg{display:flex;}
+  .cs-title{font-size:clamp(44px,14vw,72px);}
+  footer{padding:32px 20px;}
+}
 </style>
 </head>
 <body>
@@ -52,6 +65,7 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:flex;align-i
     <li><a href="estatisticas.html">Estatísticas</a></li>
     <li><a href="apostas.html">Fantasy</a></li>
     <li><a href="loja.html" class="active">Loja</a></li>
+    <li><a href="perfil.html">Perfil</a></li>
   </ul>
   <a class="nav-ig" href="https://instagram.com/mandimbafc" target="_blank">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -61,7 +75,17 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:flex;align-i
     </svg>
     @mandimbafc
   </a>
+  <button class="hbg" id="hbg" onclick="toggleHbg()"><span></span><span></span><span></span></button>
 </nav>
+
+<div class="mob-menu" id="mob-menu">
+  <a href="index.html">Início</a>
+  <a href="classificacao.html">Classificação</a>
+  <a href="estatisticas.html">Estatísticas</a>
+  <a href="apostas.html">Fantasy</a>
+  <a href="loja.html" class="active">Loja</a>
+  <a href="perfil.html">Perfil</a>
+</div>
 
 <div class="coming-soon">
   <p class="cs-eyebrow">Mandimba FC · Loja</p>
@@ -74,5 +98,10 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:flex;align-i
   <span class="f-brand">Mandimba FC · Est. 2019</span>
   <span class="f-copy">© 2026 Mandimba FC</span>
 </footer>
+<script>
+function toggleHbg() {
+  document.getElementById('mob-menu').classList.toggle('open');
+}
+</script>
 </body>
 </html>
