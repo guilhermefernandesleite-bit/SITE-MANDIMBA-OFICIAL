@@ -101,6 +101,42 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:grid;grid-te
   footer{grid-template-columns:1fr;text-align:center;padding:32px 24px;}
   .f-right{justify-content:center;}
 }
+
+.destaques-section { margin-bottom: 72px; }
+.destaques-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border-red);
+  border: 1px solid var(--border-red);
+}
+.destaque-card {
+  background: var(--black);
+  padding: 28px 24px;
+  text-align: center;
+  transition: background .2s;
+}
+.destaque-card:hover { background: rgba(155,21,21,0.06); }
+.destaque-icon { font-size: 1.8rem; margin-bottom: 10px; }
+.destaque-titulo {
+  font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--text-dim); opacity: 0.5; margin-bottom: 10px;
+}
+.destaque-nome {
+  font-family: 'Cormorant Infant', serif; font-weight: 600;
+  font-size: 1.4rem; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text); margin-bottom: 8px;
+}
+.destaque-val {
+  font-family: 'Cormorant Infant', serif; font-style: italic;
+  font-size: 1.8rem; color: var(--crimson); line-height: 1;
+}
+.destaque-lbl {
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim); opacity: 0.5; font-style: normal;
+  display: block; margin-top: 4px;
+}
+
 </style>
 </head>
 <body>
@@ -146,6 +182,13 @@ footer{border-top:1px solid var(--border);padding:44px 72px;display:grid;grid-te
   </div>
 
   <!-- ARTILHARIA -->
+  <div class="destaques-section">
+    <p class="sec-label">Destaques individuais</p>
+    <div class="destaques-grid" id="destaques-wrap">
+      <div class="loading-state">Carregando...</div>
+    </div>
+  </div>
+
   <div class="section-block">
     <p class="sec-label">Artilharia</p>
     <div id="artilharia-wrap">
@@ -251,16 +294,47 @@ function renderStatCards() {
   const totalAss   = _jogadores.reduce((s,j) => s + n(j['assistencias']), 0);
   const totalJogos = _jogos.length;
   const vitorias   = _jogos.filter(j => j['resultado'].toLowerCase().includes('vit')).length;
+  const derrotas   = _jogos.filter(j => j['resultado'].toLowerCase().includes('der')).length;
+  const empates    = _jogos.filter(j => j['resultado'].toLowerCase().includes('emp')).length;
   const mediaGols  = totalJogos ? (totalGols/totalJogos).toFixed(1) : '—';
-  const art        = [..._jogadores].sort((a,b) => n(b['gols'])-n(a['gols']))[0];
+  const aproveit   = totalJogos ? Math.round((vitorias*3/(totalJogos*3))*100) + '%' : '—';
+
+  // Destaques individuais
+  const artilheiro  = [..._jogadores].sort((a,b) => n(b['gols'])-n(a['gols']))[0];
+  const assistente  = [..._jogadores].sort((a,b) => n(b['assistencias'])-n(a['assistencias']))[0];
+  const participativo = [..._jogadores].sort((a,b) => n(b['participacoes'])-n(a['participacoes']))[0];
+  const indisciplinado = [..._jogadores].sort((a,b) => (n(b['cartoes amarelos'])+n(b['cartoes vermelhos']*3))-(n(a['cartoes amarelos'])+n(a['cartoes vermelhos']*3)))[0];
+  const presenca    = [..._jogadores].sort((a,b) => n(b['partidas'])-n(a['partidas']))[0];
 
   document.getElementById('stat-cards').innerHTML = `
     <div class="stat-card"><span class="num">${totalGols}</span><span class="lbl">Gols marcados</span></div>
-    <div class="stat-card"><span class="num">${totalAss}</span><span class="lbl">Assistências</span></div>
+    <div class="stat-card"><span class="num">${mediaGols}</span><span class="lbl">Média gols/jogo</span></div>
     <div class="stat-card"><span class="num">${totalJogos}</span><span class="lbl">Jogos disputados</span></div>
     <div class="stat-card"><span class="num">${vitorias}</span><span class="lbl">Vitórias</span></div>
-    <div class="stat-card"><span class="num">${mediaGols}</span><span class="lbl">Média gols/jogo</span></div>
-    <div class="stat-card"><span class="num">${art ? art['nome'] : '—'}</span><span class="lbl">Artilheiro</span></div>`;
+    <div class="stat-card"><span class="num">${empates}</span><span class="lbl">Empates</span></div>
+    <div class="stat-card"><span class="num">${derrotas}</span><span class="lbl">Derrotas</span></div>
+    <div class="stat-card"><span class="num">${aproveit}</span><span class="lbl">Aproveitamento</span></div>
+    <div class="stat-card"><span class="num">${totalAss}</span><span class="lbl">Assistências</span></div>`;
+
+  // Destaques individuais
+  const destaques = [
+    { titulo: 'Artilheiro', nome: artilheiro?.['nome']||'—', val: n(artilheiro?.['gols']), lbl: 'gols', icon: '⚽' },
+    { titulo: 'Maior Assistente', nome: assistente?.['nome']||'—', val: n(assistente?.['assistencias']), lbl: 'assistências', icon: '🎯' },
+    { titulo: 'Mais Participativo', nome: participativo?.['nome']||'—', val: n(participativo?.['participacoes']), lbl: 'participações', icon: '🏆' },
+    { titulo: 'Mais Presente', nome: presenca?.['nome']||'—', val: n(presenca?.['partidas']), lbl: 'partidas', icon: '📅' },
+    { titulo: 'Mais Indisciplinado', nome: indisciplinado?.['nome']||'—', val: n(indisciplinado?.['cartoes amarelos']), lbl: 'cartões', icon: '🟨' },
+  ];
+
+  const wrap = document.getElementById('destaques-wrap');
+  if (wrap) {
+    wrap.innerHTML = destaques.map(d => `
+      <div class="destaque-card">
+        <div class="destaque-icon">${d.icon}</div>
+        <div class="destaque-titulo">${d.titulo}</div>
+        <div class="destaque-nome">${d.nome}</div>
+        <div class="destaque-val">${d.val} <span class="destaque-lbl">${d.lbl}</span></div>
+      </div>`).join('');
+  }
 }
 
 function renderArtilharia() {
