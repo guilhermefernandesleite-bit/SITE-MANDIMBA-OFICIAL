@@ -260,24 +260,52 @@ function renderApostas(apostas) {
     el.innerHTML = '<div class="empty-state">Nenhuma aposta encontrada.</div>';
     return;
   }
-  el.innerHTML = apostas.map(a => {
-    const status = a.status || 'pendente';
-    const creditosStr = status === 'ganhou'
-      ? '+M$' + a.creditos_ganhos
-      : status === 'perdeu'
-      ? '-M$' + a.creditos_apostados
-      : 'M$' + a.creditos_apostados + ' apostados';
-    const data = new Date(a.criado_em).toLocaleDateString('pt-BR');
-    return `<div class="aposta-card ${status}">
-      <div class="aposta-info">
-        <span class="aposta-jogo">${a.jogo_descricao} · ${data}</span>
-        <span class="aposta-sel">${a.selecao}</span>
-        <span class="aposta-mercado">${a.mercado}</span>
+
+  // Agrupa por bilhete_id
+  const bilhetes = {};
+  apostas.forEach(a => {
+    const bid = a.bilhete_id || a.id;
+    if (!bilhetes[bid]) bilhetes[bid] = [];
+    bilhetes[bid].push(a);
+  });
+
+  el.innerHTML = Object.values(bilhetes).map(grupo => {
+    const primeiro = grupo[0];
+    const data = new Date(primeiro.criado_em).toLocaleDateString('pt-BR');
+    const creditos = primeiro.creditos_apostados;
+
+    // Status geral do bilhete
+    const todosLiquidados = grupo.every(a => a.status !== 'pendente');
+    const algumGanhou = grupo.some(a => a.status === 'ganhou');
+    const statusGeral = !todosLiquidados ? 'pendente' : algumGanhou ? 'ganhou' : 'perdeu';
+
+    // Soma créditos ganhos
+    const totalGanhos = grupo.reduce((acc, a) => acc + (a.creditos_ganhos || 0), 0);
+    const creditosStr = statusGeral === 'ganhou'
+      ? '+M$' + totalGanhos
+      : statusGeral === 'perdeu'
+      ? '-M$' + creditos
+      : 'M$' + creditos + ' apostados';
+
+    const linhas = grupo.map(a => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);opacity:0.5;display:block;">${a.mercado}</span>
+          <span style="font-family:'Cormorant Infant',serif;font-weight:600;font-size:16px;color:var(--text);">${a.selecao}</span>
+        </div>
+        <span style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;padding:2px 8px;border:1px solid;color:${a.status==='ganhou'?'#4E9B6B':a.status==='perdeu'?'#C01C1C':'#C9A84C'};border-color:${a.status==='ganhou'?'rgba(78,155,107,0.3)':a.status==='perdeu'?'rgba(192,28,28,0.3)':'rgba(201,168,76,0.3)'};">${a.status}</span>
+      </div>`
+    ).join('');
+
+    return `<div class="aposta-card ${statusGeral}" style="flex-direction:column;align-items:stretch;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span class="aposta-jogo">${primeiro.jogo_descricao} · ${data}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="aposta-status ${statusGeral}">${statusGeral}</span>
+          <span class="aposta-creditos ${statusGeral}">${creditosStr}</span>
+        </div>
       </div>
-      <div class="aposta-right">
-        <span class="aposta-status ${status}">${status}</span>
-        <span class="aposta-creditos ${status}">${creditosStr}</span>
-      </div>
+      ${linhas}
     </div>`;
   }).join('');
 }
