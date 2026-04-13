@@ -1072,32 +1072,7 @@ async function init() {
   }).pop();
   if (ultimoJogo) liquidarApostas(ultimoJogo);
 
-    // Verifica janela de apostas: só abre 2 dias antes, fecha 1 min antes do jogo
-  if (proximo) {
-    const hora = proximo['_hora_formatada'] || '—';
-    const partes = (proximo['_data_formatada']||'').split('/');
-
-    if (hora === '—' || partes.length !== 3) {
-      travarApostas('Apostas abrem em breve');
-    } else {
-      const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
-      const hm = hora.replace('h',':').split(':');
-      d.setHours(parseInt(hm[0])||0, parseInt(hm[1])||0, 0, 0);
-      const agora = new Date();
-      const msRestantes = d - agora;
-      const doisDiasMs = 2 * 24 * 60 * 60 * 1000;
-
-      if (msRestantes <= 60000) {
-        travarApostas('Apostas abrem em breve');
-      } else if (msRestantes > doisDiasMs) {
-        travarApostas('Apostas abrem em breve');
-      } else {
-        setTimeout(() => travarApostas('Apostas abrem em breve'), msRestantes - 60000);
-      }
-    }
-  }
-
-  // Calcula média de gols totais por jogo
+    // Calcula média de gols totais por jogo
   const jogosComResultado = jogos.filter(j => j['placar mandimba'] && j['placar visitante']);
   let mediaGols = 6, mediaMandimba = 4, mediaAdv = 3;
   if (jogosComResultado.length > 0) {
@@ -1123,6 +1098,31 @@ async function init() {
   renderNextMatch(proximo);
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
+
+  // Verifica janela de apostas APÓS renderizar o banner
+  if (proximo) {
+    const hora = proximo['_hora_formatada'] || '—';
+    const partes = (proximo['_data_formatada']||'').split('/');
+
+    if (hora === '—' || partes.length !== 3) {
+      travarApostas('Apostas abrem em breve');
+    } else {
+      const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
+      const hm = hora.replace('h',':').split(':');
+      d.setHours(parseInt(hm[0])||0, parseInt(hm[1])||0, 0, 0);
+      const agora = new Date();
+      const msRestantes = d - agora;
+      const doisDiasMs = 2 * 24 * 60 * 60 * 1000;
+
+      if (msRestantes <= 60000) {
+        travarApostas('Apostas abrem em breve');
+      } else if (msRestantes > doisDiasMs) {
+        travarApostas('Apostas abrem em breve');
+      } else {
+        setTimeout(() => travarApostas('Apostas abrem em breve'), msRestantes - 60000);
+      }
+    }
+  }
     const convocados = proximo ? (proximo['convocados'] || '') : '';
     window._jogosHistorico = jogosComResultado;
     renderPlayers(jogadores, convocados);
