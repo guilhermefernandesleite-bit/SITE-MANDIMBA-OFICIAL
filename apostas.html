@@ -1057,7 +1057,7 @@ async function init() {
     // Corrige extração do horário da data
   if (proximo) {
     const dataStr = (proximo['data'] || '').trim();
-    const partesDT = dataStr.split(' ');
+    const partesDT = dataStr.trim().split(' ');
     proximo['_data_formatada'] = partesDT[0] || '—';
     proximo['_hora_formatada'] = partesDT[1] ? partesDT[1] + 'h' : '—';
   }
