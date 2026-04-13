@@ -721,7 +721,7 @@ async function init() {
 
     // CLASSIFICAÇÃO
     const rClass = await fetch(CSV_CLASS + '&t=' + Date.now(), {cache:'no-store'});
-    const classif = toObjects(parseCSV(await rClass.text()), 1);
+    const classif = toObjects(parseCSV(await rClass.text()), 0);
     const tbody = document.querySelector('table.st tbody');
     if (tbody && classif.length) {
       tbody.innerHTML = '';

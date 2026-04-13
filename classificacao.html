@@ -395,7 +395,7 @@ async function init() {
     ]);
 
     const jogos = toObjects(parseCSV(await rJogos.text()), 4);
-    const classif = toObjects(parseCSV(await rClass.text()), 1);
+    const classif = toObjects(parseCSV(await rClass.text()), 0);
 
     // Só jogos com resultado
     const hoje = new Date();
