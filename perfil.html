@@ -274,35 +274,50 @@ function renderApostas(apostas) {
     const data = new Date(primeiro.criado_em).toLocaleDateString('pt-BR');
     const creditos = primeiro.creditos_apostados;
 
-    // Status geral do bilhete
+    // Múltipla: só ganha se TODAS ganharem
     const todosLiquidados = grupo.every(a => a.status !== 'pendente');
-    const algumGanhou = grupo.some(a => a.status === 'ganhou');
-    const statusGeral = !todosLiquidados ? 'pendente' : algumGanhou ? 'ganhou' : 'perdeu';
+    const todosGanharam   = grupo.every(a => a.status === 'ganhou');
+    const algumPerdeu     = grupo.some(a => a.status === 'perdeu');
+    const statusGeral     = !todosLiquidados ? 'pendente' : todosGanharam ? 'ganhou' : 'perdeu';
 
-    // Soma créditos ganhos
-    const totalGanhos = grupo.reduce((acc, a) => acc + (a.creditos_ganhos || 0), 0);
+    // Odd combinada = produto de todas as odds
+    const oddCombinada = grupo.reduce((acc, a) => acc * parseFloat(a.odd_apostada || 2), 1);
+    const retorno = Math.round(creditos * oddCombinada);
+
     const creditosStr = statusGeral === 'ganhou'
-      ? '+M$' + totalGanhos
+      ? '+M$' + retorno
       : statusGeral === 'perdeu'
       ? '-M$' + creditos
-      : 'M$' + creditos + ' apostados';
+      : 'M$' + creditos + ' · retorno potencial M$' + retorno;
 
-    const linhas = grupo.map(a => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
-        <div>
-          <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);opacity:0.5;display:block;">${a.mercado}</span>
-          <span style="font-family:'Cormorant Infant',serif;font-weight:600;font-size:16px;color:var(--text);">${a.selecao}</span>
+    const corStatus = statusGeral === 'ganhou' ? '#4E9B6B' : statusGeral === 'perdeu' ? '#C01C1C' : '#C9A84C';
+    const borderStatus = statusGeral === 'ganhou' ? 'rgba(78,155,107,0.3)' : statusGeral === 'perdeu' ? 'rgba(192,28,28,0.3)' : 'rgba(201,168,76,0.3)';
+    const bgStatus = statusGeral === 'ganhou' ? 'rgba(78,155,107,0.08)' : statusGeral === 'perdeu' ? 'rgba(192,28,28,0.08)' : 'rgba(201,168,76,0.08)';
+
+    const linhas = grupo.map(a => {
+      const corA = a.status === 'ganhou' ? '#4E9B6B' : a.status === 'perdeu' ? '#C01C1C' : '#C9A84C';
+      const icone = a.status === 'ganhou' ? '✓' : a.status === 'perdeu' ? '✕' : '·';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:14px;color:${corA};width:16px;text-align:center;">${icone}</span>
+          <div>
+            <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);opacity:0.5;display:block;">${a.mercado}</span>
+            <span style="font-family:'Cormorant Infant',serif;font-weight:600;font-size:16px;color:var(--text);">${a.selecao}</span>
+          </div>
         </div>
-        <span style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;padding:2px 8px;border:1px solid;color:${a.status==='ganhou'?'#4E9B6B':a.status==='perdeu'?'#C01C1C':'#C9A84C'};border-color:${a.status==='ganhou'?'rgba(78,155,107,0.3)':a.status==='perdeu'?'rgba(192,28,28,0.3)':'rgba(201,168,76,0.3)'};">${a.status}</span>
-      </div>`
-    ).join('');
+        <span style="font-size:11px;color:var(--text-dim);opacity:0.5;">${parseFloat(a.odd_apostada||2).toFixed(1)}×</span>
+      </div>`;
+    }).join('');
 
-    return `<div class="aposta-card ${statusGeral}" style="flex-direction:column;align-items:stretch;margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span class="aposta-jogo">${primeiro.jogo_descricao} · ${data}</span>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-          <span class="aposta-status ${statusGeral}">${statusGeral}</span>
-          <span class="aposta-creditos ${statusGeral}">${creditosStr}</span>
+    return `<div style="background:var(--surface);border-left:3px solid ${corStatus};margin-bottom:8px;padding:20px 24px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div>
+          <span style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);opacity:0.5;">${primeiro.jogo_descricao}</span>
+          <span style="display:block;font-size:11px;color:var(--text-dim);opacity:0.4;">${data} · odd combinada: ${oddCombinada.toFixed(2)}×</span>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:9px;letter-spacing:0.25em;text-transform:uppercase;padding:3px 8px;border:1px solid ${borderStatus};color:${corStatus};background:${bgStatus};display:block;margin-bottom:4px;">${statusGeral}</span>
+          <span style="font-family:'Cormorant Infant',serif;font-weight:600;font-size:18px;color:${corStatus};">${creditosStr}</span>
         </div>
       </div>
       ${linhas}
