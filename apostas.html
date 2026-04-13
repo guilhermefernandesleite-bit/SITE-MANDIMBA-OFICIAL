@@ -1165,17 +1165,42 @@ function renderNextMatch(jogo) {
 }
 
 // ── LIQUIDAÇÃO AUTOMÁTICA ──
+function verificarAposta(aposta, resultado, marcadores, golsMandimba, golsAdv, totalGols) {
+  const sel = (aposta.selecao || '').toLowerCase();
+  let ganhou = false;
+
+  if (aposta.mercado === 'Resultado') {
+    if (sel.includes('mandimba') && resultado.includes('vit')) ganhou = true;
+    if (sel === 'empate' && resultado.includes('empate')) ganhou = true;
+    if (!sel.includes('mandimba') && sel !== 'empate' && resultado.includes('der')) ganhou = true;
+  }
+
+  if (aposta.mercado === 'Marca Gol') {
+    const nomeJogador = sel.replace(' marca', '').trim();
+    ganhou = marcadores.includes(nomeJogador);
+  }
+
+  if (['total_gols','gols_mandimba','gols_adv','Total de Gols','Gols Mandimba','Gols Adversário'].includes(aposta.mercado)) {
+    const refGols = (aposta.mercado === 'gols_mandimba' || aposta.mercado === 'Gols Mandimba') ? golsMandimba :
+                    (aposta.mercado === 'gols_adv' || aposta.mercado === 'Gols Adversário') ? golsAdv : totalGols;
+    const matchMais  = sel.match(/mais de ([\d.]+)/);
+    const matchMenos = sel.match(/menos de ([\d.]+)/);
+    if (matchMais)  ganhou = refGols > parseFloat(matchMais[1]);
+    if (matchMenos) ganhou = refGols < parseFloat(matchMenos[1]);
+  }
+
+  return ganhou;
+}
+
 async function liquidarApostas(jogo) {
   if (!jogo || !jogo['resultado']) return;
-
-  const resultado   = (jogo['resultado'] || '').toLowerCase();
-  const marcadores  = (jogo['marcadores'] || '').split(',').map(m => m.trim().toLowerCase()).filter(Boolean);
+  const resultado    = (jogo['resultado'] || '').toLowerCase();
+  const marcadores   = (jogo['marcadores'] || '').split(',').map(m => m.trim().toLowerCase()).filter(Boolean);
   const golsMandimba = parseInt(jogo['placar mandimba'] || 0);
   const golsAdv      = parseInt(jogo['placar visitante'] || 0);
   const totalGols    = golsMandimba + golsAdv;
   const jogoDesc     = 'Mandimba FC vs ' + (jogo['adversario'] || '');
 
-  // Busca apostas pendentes deste jogo
   const { data: apostas } = await _sb
     .from('apostas')
     .select('*')
@@ -1184,46 +1209,40 @@ async function liquidarApostas(jogo) {
 
   if (!apostas || apostas.length === 0) return;
 
-  for (const aposta of apostas) {
-    const sel = (aposta.selecao || '').toLowerCase();
-    let ganhou = false;
+  // Agrupa por bilhete
+  const bilhetes = {};
+  apostas.forEach(a => {
+    const bid = a.bilhete_id || a.id;
+    if (!bilhetes[bid]) bilhetes[bid] = [];
+    bilhetes[bid].push(a);
+  });
 
-    if (aposta.mercado === 'Resultado') {
-      if (sel.includes('mandimba') && resultado.includes('vit')) ganhou = true;
-      if (sel === 'empate' && resultado.includes('empate')) ganhou = true;
-      if (!sel.includes('mandimba') && sel !== 'empate' && resultado.includes('der')) ganhou = true;
+  for (const [bid, grupo] of Object.entries(bilhetes)) {
+    const resultados = grupo.map(a => ({
+      aposta: a,
+      ganhou: verificarAposta(a, resultado, marcadores, golsMandimba, golsAdv, totalGols)
+    }));
+
+    const bilheteGanhou = resultados.every(r => r.ganhou);
+    const creditos = grupo[0].creditos_apostados;
+    const oddCombinada = grupo.reduce((acc, a) => acc * parseFloat(a.odd_apostada || 2), 1);
+    const creditosGanhos = bilheteGanhou ? Math.round(creditos * oddCombinada) : 0;
+
+    for (const { aposta, ganhou } of resultados) {
+      await _sb.from('apostas').update({
+        status: ganhou ? 'ganhou' : 'perdeu',
+        creditos_ganhos: bilheteGanhou ? Math.round(creditos * parseFloat(aposta.odd_apostada || 2)) : 0
+      }).eq('id', aposta.id);
     }
 
-    if (aposta.mercado === 'Marca Gol') {
-      const nomeJogador = sel.replace(' marca', '').trim();
-      ganhou = marcadores.includes(nomeJogador);
-    }
-
-    if (['total_gols','gols_mandimba','gols_adv','Total de Gols','Gols Mandimba','Gols Adversário'].includes(aposta.mercado)) {
-      const refGols = (aposta.mercado === 'gols_mandimba' || aposta.mercado === 'Gols Mandimba') ? golsMandimba :
-                      (aposta.mercado === 'gols_adv' || aposta.mercado === 'Gols Adversário') ? golsAdv : totalGols;
-      const matchMais  = sel.match(/mais de ([\d.]+)/);
-      const matchMenos = sel.match(/menos de ([\d.]+)/);
-      if (matchMais)  ganhou = refGols > parseFloat(matchMais[1]);
-      if (matchMenos) ganhou = refGols < parseFloat(matchMenos[1]);
-    }
-
-    const novoStatus = ganhou ? 'ganhou' : 'perdeu';
-    const oddAposta = parseFloat(aposta.odd_apostada || 2);
-    const creditosGanhos = ganhou ? Math.round(aposta.creditos_apostados * oddAposta) : 0;
-
-    await _sb.from('apostas').update({
-      status: novoStatus,
-      creditos_ganhos: creditosGanhos
-    }).eq('id', aposta.id);
-
-    if (ganhou) {
-      const { data: perfil } = await _sb.from('profiles').select('creditos').eq('id', aposta.user_id).single();
+    if (bilheteGanhou) {
+      const { data: perfil } = await _sb.from('profiles').select('creditos').eq('id', grupo[0].user_id).single();
       const novoSaldo = (perfil?.creditos || 0) + creditosGanhos;
-      await _sb.from('profiles').update({ creditos: novoSaldo }).eq('id', aposta.user_id);
+      await _sb.from('profiles').update({ creditos: novoSaldo }).eq('id', grupo[0].user_id);
     }
   }
-  console.log('✅ Liquidação concluída para', jogoDesc);
+
+  console.log('Liquidacao concluida para', jogoDesc);
 }
 
 // ── TRAVAMENTO DE APOSTAS ──
