@@ -1072,25 +1072,26 @@ async function init() {
   }).pop();
   if (ultimoJogo) liquidarApostas(ultimoJogo);
 
-  // Verifica janela de apostas: só abre 2 dias antes, fecha 1 min antes do jogo
+    // Verifica janela de apostas: só abre 2 dias antes, fecha 1 min antes do jogo
   if (proximo) {
+    const hora = proximo['_hora_formatada'] || '—';
     const partes = (proximo['_data_formatada']||'').split('/');
-    if (partes.length === 3) {
+
+    if (hora === '—' || partes.length !== 3) {
+      travarApostas('Apostas abrem em breve');
+    } else {
       const d = new Date(parseInt(partes[2])+2000, parseInt(partes[1])-1, parseInt(partes[0]));
-      const hm = (proximo['_hora_formatada']||'').replace('h',':').split(':');
+      const hm = hora.replace('h',':').split(':');
       d.setHours(parseInt(hm[0])||0, parseInt(hm[1])||0, 0, 0);
       const agora = new Date();
       const msRestantes = d - agora;
       const doisDiasMs = 2 * 24 * 60 * 60 * 1000;
 
       if (msRestantes <= 60000) {
-        // Menos de 1 min para o jogo — trava
         travarApostas('Apostas abrem em breve');
       } else if (msRestantes > doisDiasMs) {
-        // Mais de 2 dias para o jogo — ainda não abriu
         travarApostas('Apostas abrem em breve');
       } else {
-        // Dentro da janela — agenda travamento para 1 min antes
         setTimeout(() => travarApostas('Apostas abrem em breve'), msRestantes - 60000);
       }
     }
