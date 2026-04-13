@@ -1088,12 +1088,15 @@ async function init() {
   const jogosComResultado = jogos.filter(j => j['placar mandimba'] && j['placar visitante']);
   let mediaGols = 6, mediaMandimba = 4, mediaAdv = 3;
   if (jogosComResultado.length > 0) {
-    const totalG  = jogosComResultado.reduce((a,j) => a + parseInt(j['placar mandimba']||0) + parseInt(j['placar visitante']||0), 0);
-    const totalM  = jogosComResultado.reduce((a,j) => a + parseInt(j['placar mandimba']||0), 0);
-    const totalAd = jogosComResultado.reduce((a,j) => a + parseInt(j['placar visitante']||0), 0);
-    mediaGols      = totalG  / jogosComResultado.length;
-    mediaMandimba  = totalM  / jogosComResultado.length;
-    mediaAdv       = totalAd / jogosComResultado.length;
+    // Amistosos valem 50% do peso
+    const pesoJogo = j => (j['campeonato']||'').toLowerCase().includes('amistoso') ? 0.5 : 1.0;
+    const totalPeso = jogosComResultado.reduce((a,j) => a + pesoJogo(j), 0);
+    const totalG  = jogosComResultado.reduce((a,j) => a + (parseInt(j['placar mandimba']||0) + parseInt(j['placar visitante']||0)) * pesoJogo(j), 0);
+    const totalM  = jogosComResultado.reduce((a,j) => a + parseInt(j['placar mandimba']||0) * pesoJogo(j), 0);
+    const totalAd = jogosComResultado.reduce((a,j) => a + parseInt(j['placar visitante']||0) * pesoJogo(j), 0);
+    mediaGols      = totalG  / totalPeso;
+    mediaMandimba  = totalM  / totalPeso;
+    mediaAdv       = totalAd / totalPeso;
     const elMedia = document.getElementById('media-gols-desc');
     if (elMedia) elMedia.textContent = mediaGols.toFixed(1);
     const elM = document.getElementById('media-gols-mandimba');
@@ -1107,6 +1110,7 @@ async function init() {
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
     const convocados = proximo ? (proximo['convocados'] || '') : '';
+    window._jogosHistorico = jogosComResultado;
     renderPlayers(jogadores, convocados);
     // Atualiza nome no slip
     const nd = document.getElementById('slip-nome-display');
@@ -1329,12 +1333,26 @@ const PESO_POSICAO = {
   'GOLEIRO':  6.0
 };
 
-function calcularOdd(jogador, tipo) {
-  const gols    = Number(jogador['gols'] || 0);
-  const jogos   = Number(jogador['partidas'] || 1) || 1;
+function calcularOdd(jogador, tipo, jogosHistorico) {
+  // Calcula taxa de gols ponderada por tipo de jogo (amistoso = 50%)
+  let golsPonderados = 0, jogosPonderados = 0;
+  if (jogosHistorico && jogosHistorico.length > 0) {
+    jogosHistorico.forEach(j => {
+      const peso = (j['campeonato']||'').toLowerCase().includes('amistoso') ? 0.5 : 1.0;
+      jogosPonderados += peso;
+    });
+    // Distribui os gols proporcionalmente
+    const totalJogos = Number(jogador['partidas'] || 1) || 1;
+    const totalGols  = Number(jogador['gols'] || 0);
+    const taxaBruta  = totalGols / totalJogos;
+    golsPonderados   = taxaBruta * jogosPonderados;
+  } else {
+    golsPonderados  = Number(jogador['gols'] || 0);
+    jogosPonderados = Number(jogador['partidas'] || 1) || 1;
+  }
   const posicao = (jogador['posicao'] || '').toUpperCase().trim();
   const peso    = PESO_POSICAO[posicao] || 2.0;
-  const taxa    = gols / jogos; // gols por jogo
+  const taxa    = golsPonderados / (jogosPonderados || 1); // gols ponderados por jogo
 
   if (tipo === 'marca') {
     // Probabilidade de marcar ao menos 1 gol
@@ -1378,8 +1396,8 @@ function renderPlayers(jogadores, convocados) {
     const gols    = p['gols'] || '0';
     const jogos   = p['partidas'] || '0';
     const posicao = p['posicao'] || '';
-    const oddMarca    = calcularOdd(p, 'marca');
-    const oddPrimeiro = calcularOdd(p, 'primeiro_gol');
+    const oddMarca    = calcularOdd(p, 'marca', window._jogosHistorico || []);
+    const oddPrimeiro = calcularOdd(p, 'primeiro_gol', window._jogosHistorico || []);
     const statsPG = gols + ' gols · ' + jogos + ' jogos';
     const statsMG = gols + ' gols em ' + jogos + ' jogos';
 
