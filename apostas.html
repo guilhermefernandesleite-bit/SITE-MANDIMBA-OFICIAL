@@ -1085,13 +1085,13 @@ async function init() {
 
       if (msRestantes <= 60000) {
         // Menos de 1 min para o jogo — trava
-        travarApostas('⏱ Apostas encerradas — jogo prestes a começar');
+        travarApostas('Apostas abrem em breve');
       } else if (msRestantes > doisDiasMs) {
         // Mais de 2 dias para o jogo — ainda não abriu
-        travarApostas('🔒 Apostas abrem 2 dias antes do jogo');
+        travarApostas('Apostas abrem em breve');
       } else {
         // Dentro da janela — agenda travamento para 1 min antes
-        setTimeout(() => travarApostas('⏱ Apostas encerradas — jogo prestes a começar'), msRestantes - 60000);
+        setTimeout(() => travarApostas('Apostas abrem em breve'), msRestantes - 60000);
       }
     }
   }
