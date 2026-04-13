@@ -1272,12 +1272,12 @@ function travarApostas() {
 
   // Desabilita botão de confirmar
   const btn = document.getElementById('btn-confirmar');
-  if (btn) { btn.disabled = true; btn.textContent = 'Apostas encerradas'; }
+  if (btn) { btn.disabled = true; btn.textContent = mensagem; }
 
   // Mostra aviso no banner
   const aviso = document.createElement('div');
   aviso.style.cssText = 'grid-column:1/-1;text-align:center;padding:10px 20px;background:rgba(155,21,21,0.15);border:1px solid rgba(155,21,21,0.3);font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#C01C1C;';
-  aviso.textContent = '⏱ Apostas encerradas — jogo prestes a começar';
+  aviso.textContent = mensagem;
   const banner = document.getElementById('match-banner');
   if (banner) banner.appendChild(aviso);
 }
