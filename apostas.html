@@ -1005,6 +1005,7 @@ renderRanking();
 <script>
 const CSV_JOGOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=653989414&single=true&output=csv';
 const CSV_JOGS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=479712378&single=true&output=csv';
+const CSV_CLASS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx_tYrAv5hEef1kS-mvz1CfJvh_voKvOyiQ97Ybz4EynADCYdBbh5HmRlWuD5l4P800mu4pwUeP9RU/pub?gid=397102722&single=true&output=csv';
 
 const selections = {};
 
@@ -1044,6 +1045,10 @@ async function init() {
       }
       return false;
     });
+
+    // Busca classificação para odds de resultado
+    const rC = await fetch(CSV_CLASS + '&t=' + Date.now(), {cache:'no-store'});
+    const classif = toObjects(parseCSV(await rC.text()), 0);
 
     // Busca jogadores
     const rP = await fetch(CSV_JOGS + '&t=' + Date.now(), {cache:'no-store', headers:{'Cache-Control':'no-cache'}});
@@ -1106,6 +1111,7 @@ async function init() {
   }
   renderTotalGols(mediaGols, mediaMandimba, mediaAdv);
 
+  renderOddsResultado(classif, proximo ? (proximo['adversario'] || '') : '');
   renderNextMatch(proximo);
   const banner = document.getElementById('match-banner');
   if(banner) banner.style.opacity = '1';
@@ -1322,6 +1328,49 @@ function renderTotalGols(mediaTotal, mediaMandimba, mediaAdv) {
   renderGolsSecao('opts-total-gols',    'total_gols',    mediaTotal,    '');
   renderGolsSecao('opts-gols-mandimba', 'gols_mandimba', mediaMandimba, 'Mandimba: ');
   renderGolsSecao('opts-gols-adv',      'gols_adv',      mediaAdv,      'Adversário: ');
+}
+
+// ── ODDS DE RESULTADO DINÂMICAS ──
+function renderOddsResultado(classif, adversario) {
+  if (!classif || !adversario) return;
+
+  const nomAdv = adversario.toLowerCase().trim();
+  const mandimba = classif.find(r => (r['time']||'').toLowerCase().includes('mandimba'));
+  const adv      = classif.find(r => (r['time']||'').toLowerCase().includes(nomAdv.split(' ')[0]));
+
+  if (!mandimba || !adv) return;
+
+  // Aproveitamento como força relativa
+  const aprovM = parseFloat((mandimba['aproveitamento']||'50%').replace('%','')) / 100 || 0.5;
+  const aprovA = parseFloat((adv['aproveitamento']||'50%').replace('%','')) / 100 || 0.5;
+
+  // Força normalizada
+  const totalForça = aprovM + aprovA + 0.25; // 0.25 para empate
+  const probM = aprovM / totalForça;
+  const probE = 0.25   / totalForça;
+  const probA = aprovA / totalForça;
+
+  // Odds com margem de 8%
+  const oddM = Math.max(1.1, Math.round((1 / probM) * 0.92 * 100) / 100);
+  const oddE = Math.max(1.5, Math.round((1 / probE) * 0.92 * 100) / 100);
+  const oddA = Math.max(1.1, Math.round((1 / probA) * 0.92 * 100) / 100);
+
+  // Atualiza cards
+  const cards = document.querySelectorAll('.result-card');
+  cards.forEach(card => {
+    const sel = card.dataset.sel || '';
+    const oddEl = card.querySelector('.result-odd');
+    if (sel.includes('mandimba') || sel.toLowerCase().includes('mandimba')) {
+      card.dataset.odd = oddM;
+      if (oddEl) oddEl.textContent = oddM + '×';
+    } else if (sel === 'Empate') {
+      card.dataset.odd = oddE;
+      if (oddEl) oddEl.textContent = oddE + '×';
+    } else {
+      card.dataset.odd = oddA;
+      if (oddEl) oddEl.textContent = oddA + '×';
+    }
+  });
 }
 
 // Peso por posição — futebol de 7
