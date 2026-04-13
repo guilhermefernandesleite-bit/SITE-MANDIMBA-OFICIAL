@@ -245,11 +245,24 @@ async function init() {
   // Atualiza saldo
   document.getElementById('saldo-val').textContent = 'M$' + (profile?.creditos || 0);
 
-  // Stats
-  document.getElementById('stat-total').textContent = _todasApostas.length;
-  document.getElementById('stat-pendente').textContent = _todasApostas.filter(a => a.status === 'pendente').length;
-  document.getElementById('stat-ganhou').textContent = _todasApostas.filter(a => a.status === 'ganhou').length;
-  document.getElementById('stat-perdeu').textContent = _todasApostas.filter(a => a.status === 'perdeu').length;
+  // Agrupa por bilhete para stats
+  const bilhetesMap = {};
+  _todasApostas.forEach(a => {
+    const bid = a.bilhete_id || a.id;
+    if (!bilhetesMap[bid]) bilhetesMap[bid] = [];
+    bilhetesMap[bid].push(a);
+  });
+  const bilhetesLista = Object.values(bilhetesMap);
+
+  const totalBilhetes    = bilhetesLista.length;
+  const bilhetesPendente = bilhetesLista.filter(g => g.some(a => a.status === 'pendente')).length;
+  const bilhetesGanhou   = bilhetesLista.filter(g => g.every(a => a.status === 'ganhou')).length;
+  const bilhetesPerdeu   = bilhetesLista.filter(g => !g.some(a => a.status === 'pendente') && !g.every(a => a.status === 'ganhou')).length;
+
+  document.getElementById('stat-total').textContent = totalBilhetes;
+  document.getElementById('stat-pendente').textContent = bilhetesPendente;
+  document.getElementById('stat-ganhou').textContent = bilhetesGanhou;
+  document.getElementById('stat-perdeu').textContent = bilhetesPerdeu;
 
   renderApostas(_todasApostas);
 }
